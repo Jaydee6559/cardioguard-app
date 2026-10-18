@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'alerts_screen.dart';
 import 'coming_soon_tab.dart';
 import 'dashboard_screen.dart';
+import 'vitals_screen.dart';
 
 /// The main app after signing in: four tabs with a bottom navigation bar.
 ///
@@ -17,11 +19,11 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
 
-  // Vitals, Alerts and Settings are placeholders until their screens are built.
+  // Settings is a placeholder until its screen is built.
   static const _tabs = <Widget>[
     DashboardScreen(),
-    ComingSoonTab(kicker: 'Monitoring data', title: 'Vital Signs History', icon: Icons.show_chart),
-    ComingSoonTab(kicker: 'History', title: 'Alerts & Events', icon: Icons.notifications_none),
+    VitalsScreen(),
+    AlertsScreen(),
     ComingSoonTab(kicker: 'Account', title: 'Profile & Settings', icon: Icons.settings_outlined, showSignOut: true),
   ];
 

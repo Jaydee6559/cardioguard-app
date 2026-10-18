@@ -52,4 +52,29 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Roberto Santos'), findsOneWidget);
   });
+
+  testWidgets('Vitals and Alerts tabs show their content', (tester) async {
+    await tester.pumpWidget(const CardioGuardApp());
+
+    await tester.enterText(find.byType(TextFormField).at(0), 'caregiver@cardioguard.app');
+    await tester.enterText(find.byType(TextFormField).at(1), 'password123');
+    await tester.tap(find.widgetWithText(FilledButton, 'Sign In'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Vitals'));
+    await tester.pumpAndSettle();
+    expect(find.text('Vital Signs History'), findsOneWidget);
+    await tester.tap(find.text('Weekly'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Alerts'));
+    await tester.pumpAndSettle();
+    expect(find.text('Manual SOS'), findsOneWidget);
+
+    // Filter to Info: only the post-fall response remains.
+    await tester.tap(find.text('Info (1)'));
+    await tester.pumpAndSettle();
+    expect(find.text('Post-fall Response'), findsOneWidget);
+    expect(find.text('Manual SOS'), findsNothing);
+  });
 }
