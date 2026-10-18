@@ -77,4 +77,31 @@ void main() {
     expect(find.text('Post-fall Response'), findsOneWidget);
     expect(find.text('Manual SOS'), findsNothing);
   });
+
+  testWidgets('Settings opens Emergency Contacts and Device & Sensors', (tester) async {
+    await tester.pumpWidget(const CardioGuardApp());
+
+    await tester.enterText(find.byType(TextFormField).at(0), 'caregiver@cardioguard.app');
+    await tester.enterText(find.byType(TextFormField).at(1), 'password123');
+    await tester.tap(find.widgetWithText(FilledButton, 'Sign In'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+    expect(find.text('Profile & Settings'), findsOneWidget);
+    expect(find.text('2 contacts'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Emergency contacts'));
+    await tester.tap(find.text('Emergency contacts'));
+    await tester.pumpAndSettle();
+    expect(find.text('Dr. Reyes'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Device & sensors'));
+    await tester.tap(find.text('Device & sensors'));
+    await tester.pumpAndSettle();
+    expect(find.text('MPU6050'), findsOneWidget);
+  });
 }

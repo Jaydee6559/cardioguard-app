@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../data/app_state.dart';
 import '../data/mock_data.dart';
 import '../routes.dart';
 import '../theme.dart';
@@ -46,8 +47,13 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
     return a is EmergencyAlertArgs ? a : EmergencyAlertArgs.noResponse;
   }
 
+  // Primary contact from the Contacts screen (falls back to sample data).
+  String get _contactName => AppState.primaryContact?.name ?? MockData.contactName;
+  String get _contactRelationship => AppState.primaryContact?.relationship ?? MockData.contactRelationship;
+  String get _contactPhone => AppState.primaryContact?.phone ?? MockData.contactPhone;
+
   Future<void> _callContact() async {
-    final uri = Uri(scheme: 'tel', path: MockData.contactPhone.replaceAll(' ', ''));
+    final uri = Uri(scheme: 'tel', path: _contactPhone.replaceAll(' ', ''));
     bool opened;
     try {
       opened = await launchUrl(uri);
@@ -88,7 +94,7 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
                 'Readings',
                 '${MockData.alertHeartRate} BPM · SpO₂ ${MockData.alertSpo2}% · ${MockData.alertMovement} movement',
               ),
-              const _DetailRow('Primary contact', '${MockData.contactName} (${MockData.contactRelationship})'),
+              _DetailRow('Primary contact', '$_contactName ($_contactRelationship)'),
             ],
           ),
         ),
@@ -172,12 +178,9 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      const _RedCard(
+                      _RedCard(
                         label: 'Primary contact',
-                        child: _NameLine(
-                          '${MockData.contactName} · ${MockData.contactRelationship}',
-                          MockData.contactPhone,
-                        ),
+                        child: _NameLine('$_contactName · $_contactRelationship', _contactPhone),
                       ),
                     ],
                   ),

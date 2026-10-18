@@ -1,13 +1,20 @@
 import '../models/alert_event.dart';
+import '../models/emergency_contact.dart';
 
 /// Sample values used while the app is UI-only.
 ///
 /// Every screen reads its numbers from here. When the Arduino is connected,
 /// these get replaced by live data and the screens stay the same.
 class MockData {
+  // The signed-in caregiver
+  static const caregiverName = 'Maria Santos';
+  static const caregiverEmail = 'caregiver@cardioguard.app';
+  static const caregiverRole = 'Daughter · Primary Caregiver';
+
   // The person wearing the device
   static const wearerName = 'Roberto Santos';
   static const wearerAge = 72;
+  static const wearerCondition = 'Cardiac monitoring';
 
   // Dashboard readings
   static const deviceConnected = true;
@@ -95,4 +102,30 @@ class MockData {
       time: DateTime(2026, 9, 10, 11, 55),
     ),
   ];
+
+  // ---------------------------------------------------------- Contacts
+  static const contacts = [
+    EmergencyContact(name: 'Maria Santos', relationship: 'Daughter', phone: '+63 917 555 0142', primary: true),
+    EmergencyContact(name: 'Dr. Reyes', relationship: 'Physician', phone: '+63 912 888 0234'),
+  ];
+
+  // ---------------------------------------------------------- Device & Sensors
+  static const batteryHoursLeft = 14;
+  static const sensors = [
+    SensorInfo('Arduino Uno R3', 'Main Controller', 'Connected'),
+    SensorInfo('HC-05 Bluetooth', 'Communication', 'Connected'),
+    SensorInfo('MAX30102', 'Heart Rate & SpO₂', 'Working'),
+    SensorInfo('MPU6050', 'Movement & Fall Detection', 'Working'),
+    SensorInfo('Buzzer', 'Local Alert', 'Ready'),
+  ];
+}
+
+/// One row on the Device & Sensors screen.
+class SensorInfo {
+  final String name;
+  final String role;
+  final String status; // Connected / Working / Ready / Error
+  const SensorInfo(this.name, this.role, this.status);
+
+  bool get ok => status != 'Error';
 }
