@@ -1,30 +1,33 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cardioguard/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('App opens on Sign In', (tester) async {
+    await tester.pumpWidget(const CardioGuardApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(find.text('CardioGuard'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Sign In'), findsOneWidget);
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+  testWidgets('Sign In shows errors when fields are empty', (tester) async {
+    await tester.pumpWidget(const CardioGuardApp());
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Sign In'));
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Enter your email'), findsOneWidget);
+    expect(find.text('Enter your password'), findsOneWidget);
+  });
+
+  testWidgets('Create one opens Create Account', (tester) async {
+    await tester.pumpWidget(const CardioGuardApp());
+
+    await tester.ensureVisible(find.text('Create one'));
+    await tester.tap(find.text('Create one'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Set up your caregiver account'), findsOneWidget);
   });
 }
