@@ -13,6 +13,15 @@ class AppColors {
   static const textMuted = Color(0xFF64748B); // subtitles
   static const textFaint = Color(0xFF94A3B8); // hints, disclaimers
   static const danger = Color(0xFFDC2626);
+
+  // Status colours (dashboard, alerts)
+  static const success = Color(0xFF16A34A); // "Normal", "Connected"
+  static const successBg = Color(0xFFE8F7EE);
+  static const warning = Color(0xFFF59E0B); // fall check
+  static const emergency = Color(0xFFE00012); // SOS, emergency alert
+  static const emergencyBg = Color(0xFFFDECEC);
+  static const cream = Color(0xFFFDF9EA); // fall / no-response background
+  static const infoBg = Color(0xFFEAF0FE); // light blue icon tile
 }
 
 /// One theme for the whole app, so every screen matches the prototype.
@@ -66,5 +75,21 @@ ThemeData buildAppTheme() {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
     ),
     snackBarTheme: const SnackBarThemeData(behavior: SnackBarBehavior.floating),
+    navigationBarTheme: NavigationBarThemeData(
+      backgroundColor: Colors.white,
+      indicatorColor: AppColors.infoBg,
+      labelTextStyle: WidgetStateProperty.resolveWith(
+        (states) => TextStyle(
+          fontSize: 12,
+          fontWeight: states.contains(WidgetState.selected) ? FontWeight.w600 : FontWeight.w400,
+          color: states.contains(WidgetState.selected) ? AppColors.primary : AppColors.textMuted,
+        ),
+      ),
+      iconTheme: WidgetStateProperty.resolveWith(
+        (states) => IconThemeData(
+          color: states.contains(WidgetState.selected) ? AppColors.primary : AppColors.textMuted,
+        ),
+      ),
+    ),
   );
 }
