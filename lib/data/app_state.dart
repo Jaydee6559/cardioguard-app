@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/account.dart';
@@ -34,6 +34,7 @@ class AppState {
   static const _kFallAlerts = 'alerts_fall';
   static const _kHeartAlerts = 'alerts_heart_rate';
   static const _kDisconnectAlerts = 'alerts_disconnect';
+  static const _kThemeMode = 'theme_mode';
 
   static const maxEvents = 200;
 
@@ -41,6 +42,9 @@ class AppState {
   static final account = ValueNotifier<Account?>(null);
   static final contacts = ValueNotifier<List<EmergencyContact>>([]);
   static final events = ValueNotifier<List<AlertEvent>>([]);
+
+  /// Appearance: follow the phone (system), or always light / always dark.
+  static final themeMode = ValueNotifier<ThemeMode>(ThemeMode.system);
 
   static bool get isSignedIn => account.value != null;
 
@@ -66,6 +70,9 @@ class AppState {
     } else {
       events.value = _decodeList(savedEvents, AlertEvent.fromJson);
     }
+
+    // Appearance
+    themeMode.value = ThemeMode.values.asNameMap()[_prefs.getString(_kThemeMode)] ?? ThemeMode.system;
 
     // Remember me: sign straight back in
     final remembered = _prefs.getString(_kRemembered);
@@ -156,6 +163,13 @@ class AppState {
   static Future<void> setFallAlerts(bool v) => _prefs.setBool(_kFallAlerts, v);
   static Future<void> setHeartRateAlerts(bool v) => _prefs.setBool(_kHeartAlerts, v);
   static Future<void> setDisconnectAlerts(bool v) => _prefs.setBool(_kDisconnectAlerts, v);
+
+  // ============================================================ Appearance
+
+  static Future<void> setThemeMode(ThemeMode mode) async {
+    themeMode.value = mode;
+    await _prefs.setString(_kThemeMode, mode.name);
+  }
 
   // =============================================================== Contacts
 

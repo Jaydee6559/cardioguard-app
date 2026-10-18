@@ -59,6 +59,7 @@ class _NoResponseScreenState extends State<NoResponseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return PopScope(
       canPop: false,
       child: Scaffold(
@@ -87,13 +88,13 @@ class _NoResponseScreenState extends State<NoResponseScreen> {
                     child: const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 38),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
+                  Text(
                     'No Response Detected',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: Color(0xFFB91C1C)),
+                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: AppColors.emergencyText),
                   ),
                   const SizedBox(height: 10),
-                  const Text(
+                  Text(
                     'Emergency alert will be sent to the caregiver immediately.',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 15.5, color: AppColors.textMuted, height: 1.4),
@@ -110,7 +111,7 @@ class _NoResponseScreenState extends State<NoResponseScreen> {
                   const SizedBox(height: 14),
                   Text(
                     'Sending automatically in ${_secondsLeft}s',
-                    style: const TextStyle(color: AppColors.textFaint, fontSize: 13),
+                    style: TextStyle(color: AppColors.textFaint, fontSize: 13),
                   ),
                 ],
               ),

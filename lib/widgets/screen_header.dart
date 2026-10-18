@@ -13,6 +13,7 @@ class ScreenHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -22,12 +23,12 @@ class ScreenHeader extends StatelessWidget {
             children: [
               Text(
                 kicker.toUpperCase(),
-                style: const TextStyle(fontSize: 12.5, letterSpacing: 1.4, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 12.5, letterSpacing: 1.4, color: AppColors.textMuted),
               ),
               const SizedBox(height: 2),
               Text(
                 title,
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
               ),
             ],
           ),

@@ -11,6 +11,7 @@ class AppLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return Container(
       width: size,
       height: size,
@@ -43,6 +44,7 @@ class CenteredScrollPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return LayoutBuilder(
       builder: (context, constraints) => SingleChildScrollView(
         padding: padding,
@@ -67,6 +69,7 @@ class AuthCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -90,11 +93,12 @@ class FieldLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         text,
-        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textLabel),
+        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textLabel),
       ),
     );
   }
@@ -133,6 +137,7 @@ class LabeledField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -185,6 +190,7 @@ class _PasswordFieldState extends State<PasswordField> {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return LabeledField(
       label: widget.label,
       controller: widget.controller,
@@ -214,11 +220,12 @@ class AuthFooterLink extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return Wrap(
       alignment: WrapAlignment.center,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        Text(prompt, style: const TextStyle(color: AppColors.textMuted, fontSize: 14)),
+        Text(prompt, style: TextStyle(color: AppColors.textMuted, fontSize: 14)),
         TextButton(
           onPressed: onTap,
           style: TextButton.styleFrom(
@@ -239,7 +246,8 @@ class MedicalDisclaimer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Text(
+    AppColors.watch(context);
+    return Text(
       'CardioGuard is a monitoring aid, not a substitute for professional medical care.',
       textAlign: TextAlign.center,
       style: TextStyle(color: AppColors.textFaint, fontSize: 12.5, height: 1.4),

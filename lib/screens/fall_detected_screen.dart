@@ -95,6 +95,7 @@ class _FallDetectedScreenState extends State<FallDetectedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     final progress = _secondsLeft / _total;
     return PopScope(
       canPop: false,
@@ -124,7 +125,7 @@ class _FallDetectedScreenState extends State<FallDetectedScreen> {
                   child: const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 38),
                 ),
                 const SizedBox(height: 24),
-                const Text(
+                Text(
                   'Possible Fall Detected',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
@@ -133,7 +134,7 @@ class _FallDetectedScreenState extends State<FallDetectedScreen> {
                 Text(
                   "$_firstName's device detected a sudden impact.",
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 15.5, color: AppColors.textMuted, height: 1.4),
+                  style: TextStyle(fontSize: 15.5, color: AppColors.textMuted, height: 1.4),
                 ),
                 const SizedBox(height: 28),
 
@@ -142,16 +143,16 @@ class _FallDetectedScreenState extends State<FallDetectedScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.surface,
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: const Color(0xFFF3E3B5)),
+                    border: Border.all(color: AppColors.warningBorder),
                   ),
                   child: Column(
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const SizedBox(
+                          SizedBox(
                             width: 16,
                             height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.warning),
@@ -160,7 +161,7 @@ class _FallDetectedScreenState extends State<FallDetectedScreen> {
                           Flexible(
                             child: Text(
                               'Waiting for $_firstName to respond…',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textLabel),
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textLabel),
                             ),
                           ),
                         ],
@@ -180,7 +181,7 @@ class _FallDetectedScreenState extends State<FallDetectedScreen> {
                             value: value,
                             minHeight: 8,
                             color: AppColors.warning,
-                            backgroundColor: const Color(0xFFFDE68A),
+                            backgroundColor: AppColors.warningTrack,
                           ),
                         ),
                       ),
@@ -189,7 +190,7 @@ class _FallDetectedScreenState extends State<FallDetectedScreen> {
                         '$_firstName can press the button on his device to say he\'s OK. '
                         'If there is no answer, an emergency alert is raised automatically.',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 13.5, color: AppColors.textMuted, height: 1.4),
+                        style: TextStyle(fontSize: 13.5, color: AppColors.textMuted, height: 1.4),
                       ),
                     ],
                   ),

@@ -72,6 +72,7 @@ class ContactsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return Scaffold(
       appBar: SubpageAppBar(
         action: FilledButton.icon(
@@ -88,13 +89,13 @@ class ContactsScreen extends StatelessWidget {
           children: [
             const ScreenHeader(kicker: 'Management', title: 'Emergency Contacts'),
             const SizedBox(height: 6),
-            const Text(
+            Text(
               'The primary contact is shown first on the Emergency Alert screen.',
               style: TextStyle(color: AppColors.textMuted, fontSize: 13.5),
             ),
             const SizedBox(height: 16),
             if (contacts.isEmpty)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(vertical: 48),
                 child: Column(
                   children: [
@@ -142,6 +143,7 @@ class _ContactCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 16, 8, 12),
       decoration: BoxDecoration(
@@ -158,7 +160,7 @@ class _ContactCard extends StatelessWidget {
                 child: Text(
                   contact.name,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                 ),
               ),
               if (contact.primary) ...[
@@ -170,27 +172,27 @@ class _ContactCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
                   ),
-                  child: const Text('Primary', style: TextStyle(color: AppColors.primary, fontSize: 12.5)),
+                  child: Text('Primary', style: TextStyle(color: AppColors.primary, fontSize: 12.5)),
                 ),
               ],
               const Spacer(),
               IconButton(
                 tooltip: 'Text',
                 onPressed: onText,
-                icon: const Icon(Icons.sms_outlined, color: AppColors.primary),
+                icon: Icon(Icons.sms_outlined, color: AppColors.primary),
               ),
               IconButton(
                 tooltip: 'Call',
                 onPressed: onCall,
-                icon: const Icon(Icons.call_outlined, color: AppColors.success),
+                icon: Icon(Icons.call_outlined, color: AppColors.success),
               ),
             ],
           ),
-          Text(contact.relationship, style: const TextStyle(color: AppColors.textMuted, fontSize: 14)),
+          Text(contact.relationship, style: TextStyle(color: AppColors.textMuted, fontSize: 14)),
           const SizedBox(height: 4),
           Text(
             contact.phone,
-            style: const TextStyle(color: AppColors.textLabel, fontSize: 15, letterSpacing: 0.5),
+            style: TextStyle(color: AppColors.textLabel, fontSize: 15, letterSpacing: 0.5),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
@@ -256,6 +258,7 @@ class _ContactFormState extends State<ContactForm> {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return Padding(
       // Push the form above the keyboard.
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
@@ -269,7 +272,7 @@ class _ContactFormState extends State<ContactForm> {
             children: [
               Text(
                 widget.existing == null ? 'Add contact' : 'Edit contact',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
               ),
               const SizedBox(height: 16),
               LabeledField(

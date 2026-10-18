@@ -11,12 +11,19 @@ extension SeverityStyle on Severity {
         Severity.info => AppColors.success,
       };
 
-  /// Darker text colour so amber stays readable on its light badge.
-  Color get textColor => switch (this) {
-        Severity.emergency => const Color(0xFFB91C1C),
-        Severity.warning => const Color(0xFFB45309),
-        Severity.info => const Color(0xFF15803D),
-      };
+  /// Text colour on the badge: darker in light mode (so amber stays
+  /// readable), lighter in dark mode.
+  Color get textColor => AppColors.isDark
+      ? switch (this) {
+          Severity.emergency => const Color(0xFFF87171),
+          Severity.warning => const Color(0xFFFBBF24),
+          Severity.info => const Color(0xFF4ADE80),
+        }
+      : switch (this) {
+          Severity.emergency => const Color(0xFFB91C1C),
+          Severity.warning => const Color(0xFFB45309),
+          Severity.info => const Color(0xFF15803D),
+        };
 
   String get label => switch (this) {
         Severity.emergency => 'Emergency',
@@ -32,6 +39,7 @@ class SeverityBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -51,6 +59,7 @@ class SeverityDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return Container(
       width: 9,
       height: 9,

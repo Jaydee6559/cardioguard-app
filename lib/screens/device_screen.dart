@@ -22,6 +22,7 @@ class DeviceScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     final battery = MockData.battery;
     return Scaffold(
       appBar: const SubpageAppBar(),
@@ -36,7 +37,7 @@ class DeviceScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
                   children: [
                     Expanded(child: CardLabel('Battery level')),
                     Icon(Icons.battery_5_bar_outlined, color: AppColors.textMuted),
@@ -49,10 +50,10 @@ class DeviceScreen extends StatelessWidget {
                   children: [
                     Text(
                       '$battery',
-                      style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                      style: TextStyle(fontSize: 36, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                     ),
                     const SizedBox(width: 4),
-                    const Text('%', style: TextStyle(fontSize: 16, color: AppColors.textFaint)),
+                    Text('%', style: TextStyle(fontSize: 16, color: AppColors.textFaint)),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -62,11 +63,11 @@ class DeviceScreen extends StatelessWidget {
                     value: battery / 100,
                     minHeight: 9,
                     color: battery > 20 ? AppColors.success : AppColors.emergency,
-                    backgroundColor: const Color(0xFFEFF2F6),
+                    backgroundColor: AppColors.track,
                   ),
                 ),
                 const SizedBox(height: 10),
-                const Text(
+                Text(
                   'Est. ${MockData.batteryHoursLeft} hours remaining',
                   style: TextStyle(color: AppColors.textFaint, fontSize: 13.5),
                 ),
@@ -91,10 +92,10 @@ class DeviceScreen extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   'Today, ${Formatters.clock(DateTime.now())}',
-                  style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                  style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 2),
-                Text(Formatters.date(DateTime.now()), style: const TextStyle(color: AppColors.textFaint, fontSize: 13.5)),
+                Text(Formatters.date(DateTime.now()), style: TextStyle(color: AppColors.textFaint, fontSize: 13.5)),
               ],
             ),
           ),
@@ -141,6 +142,7 @@ class _SensorRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     final color = sensor.ok ? AppColors.success : AppColors.emergency;
     return SectionCard(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -152,10 +154,10 @@ class _SensorRow extends StatelessWidget {
               children: [
                 Text(
                   sensor.name,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 2),
-                Text(sensor.role, style: const TextStyle(color: AppColors.textMuted, fontSize: 13.5)),
+                Text(sensor.role, style: TextStyle(color: AppColors.textMuted, fontSize: 13.5)),
               ],
             ),
           ),

@@ -27,7 +27,7 @@ class DashboardScreen extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        icon: const Icon(Icons.sos, color: AppColors.emergency, size: 32),
+        icon: Icon(Icons.sos, color: AppColors.emergency, size: 32),
         title: const Text('Send SOS?'),
         content: const Text('This raises an emergency alert and notifies your emergency contacts.'),
         actions: [
@@ -51,11 +51,12 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return SafeArea(
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
         children: [
-          const ScreenHeader(
+          ScreenHeader(
             kicker: 'Monitoring',
             title: MockData.wearerName,
             trailing: MockData.deviceConnected
@@ -65,7 +66,7 @@ class DashboardScreen extends StatelessWidget {
           const SizedBox(height: 18),
           const _OverallStatusCard(),
           const SizedBox(height: 14),
-          const _TileRow(
+          _TileRow(
             left: VitalCard(
               label: 'Heart Rate',
               icon: Icons.favorite,
@@ -88,7 +89,7 @@ class DashboardScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          const _TileRow(
+          _TileRow(
             left: VitalCard(
               label: 'Movement',
               icon: Icons.monitor_heart_outlined,
@@ -109,7 +110,7 @@ class DashboardScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const CardLabel('Emergency', color: AppColors.emergency),
+                CardLabel('Emergency', color: AppColors.emergency),
                 const SizedBox(height: 14),
                 Row(
                   children: [
@@ -151,6 +152,7 @@ class _OverallStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return SectionCard(
       child: Row(
         children: [
@@ -160,14 +162,14 @@ class _OverallStatusCard extends StatelessWidget {
               children: [
                 const CardLabel('Overall status'),
                 const SizedBox(height: 6),
-                const Text(
+                Text(
                   'Normal',
                   style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700, color: AppColors.success),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Last updated: ${Formatters.clock(DateTime.now())} today',
-                  style: const TextStyle(color: AppColors.textFaint, fontSize: 13.5),
+                  style: TextStyle(color: AppColors.textFaint, fontSize: 13.5),
                 ),
               ],
             ),
@@ -175,8 +177,8 @@ class _OverallStatusCard extends StatelessWidget {
           Container(
             width: 56,
             height: 56,
-            decoration: const BoxDecoration(color: AppColors.successBg, shape: BoxShape.circle),
-            child: const Icon(Icons.verified_user_outlined, color: AppColors.success, size: 28),
+            decoration: BoxDecoration(color: AppColors.successBg, shape: BoxShape.circle),
+            child: Icon(Icons.verified_user_outlined, color: AppColors.success, size: 28),
           ),
         ],
       ),
@@ -192,6 +194,7 @@ class _TileRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -177,4 +177,23 @@ void main() {
     expect(find.text('Contact someone'), findsOneWidget);
     expect(find.text('Dr. Reyes'), findsOneWidget);
   });
+
+  testWidgets('Appearance switches the app to dark mode and is saved', (tester) async {
+    await tester.pumpWidget(const CardioGuardApp());
+    await signIn(tester);
+
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Dark'));
+    await tester.tap(find.text('Dark'));
+    await tester.pumpAndSettle();
+
+    final theme = Theme.of(tester.element(find.text('Profile & Settings')));
+    expect(theme.brightness, Brightness.dark);
+    expect(AppState.themeMode.value, ThemeMode.dark);
+
+    // Saved: still dark after "restarting" the app.
+    await AppState.init();
+    expect(AppState.themeMode.value, ThemeMode.dark);
+  });
 }

@@ -149,6 +149,7 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     final args = _args;
     return PopScope(
       canPop: false,
@@ -307,6 +308,7 @@ class _RedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -339,6 +341,7 @@ class _NameLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -359,6 +362,7 @@ class _Reading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return Column(
       children: [
         Text(value, style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w700)),
@@ -377,14 +381,15 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+          Text(label, style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
           const SizedBox(height: 2),
-          Text(value, style: const TextStyle(color: AppColors.textPrimary, fontSize: 15)),
+          Text(value, style: TextStyle(color: AppColors.textPrimary, fontSize: 15)),
         ],
       ),
     );
@@ -400,6 +405,7 @@ class _OutlineWhiteButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return OutlinedButton.icon(
       onPressed: onPressed,
       icon: Icon(icon, size: 20),

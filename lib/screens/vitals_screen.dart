@@ -40,6 +40,7 @@ class _VitalsScreenState extends State<VitalsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return SafeArea(
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -58,10 +59,10 @@ class _VitalsScreenState extends State<VitalsScreen> {
               style: SegmentedButton.styleFrom(
                 visualDensity: VisualDensity.compact,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                selectedBackgroundColor: Colors.white,
+                selectedBackgroundColor: AppColors.surface,
                 selectedForegroundColor: AppColors.textPrimary,
                 foregroundColor: AppColors.textMuted,
-                backgroundColor: const Color(0xFFE6EBF1),
+                backgroundColor: AppColors.segmentBg,
                 side: BorderSide.none,
               ),
             ),
@@ -103,7 +104,7 @@ class _VitalsScreenState extends State<VitalsScreen> {
             caption: _caption('95–100%'),
           ),
           const SizedBox(height: 18),
-          const Text(
+          Text(
             'This is monitoring data only. Consult a physician for medical advice.',
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.textFaint, fontSize: 13),

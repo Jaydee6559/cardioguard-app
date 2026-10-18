@@ -14,6 +14,7 @@ class EventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return Material(
       color: AppColors.surface,
       borderRadius: BorderRadius.circular(18),
@@ -36,7 +37,7 @@ class EventCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       event.title,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -44,9 +45,9 @@ class EventCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 6),
-              Text(event.description, style: const TextStyle(color: AppColors.textMuted, fontSize: 14, height: 1.35)),
+              Text(event.description, style: TextStyle(color: AppColors.textMuted, fontSize: 14, height: 1.35)),
               const SizedBox(height: 8),
-              Text(Formatters.eventStamp(event.time), style: const TextStyle(color: AppColors.textFaint, fontSize: 13)),
+              Text(Formatters.eventStamp(event.time), style: TextStyle(color: AppColors.textFaint, fontSize: 13)),
             ],
           ),
         ),

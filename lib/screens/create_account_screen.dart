@@ -102,6 +102,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -124,12 +125,12 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
+                    Text(
                       'Create Account',
                       style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                     ),
                     const SizedBox(height: 6),
-                    const Text(
+                    Text(
                       'Set up your caregiver account',
                       style: TextStyle(fontSize: 15, color: AppColors.textMuted),
                     ),
@@ -190,7 +191,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                               DropdownButtonFormField<String>(
                                 initialValue: _relationship,
                                 isExpanded: true,
-                                hint: const Text('Select relationship',
+                                hint: Text('Select relationship',
                                     style: TextStyle(color: AppColors.textFaint)),
                                 icon: const Icon(Icons.keyboard_arrow_down_rounded),
                                 borderRadius: BorderRadius.circular(12),
@@ -266,6 +267,7 @@ class _TermsCheckbox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return FormField<bool>(
       initialValue: false,
       validator: (v) => v == true ? null : 'Please agree to the Terms & Privacy Policy',
@@ -289,11 +291,11 @@ class _TermsCheckbox extends StatelessWidget {
                 child: Text.rich(
                   TextSpan(
                     text: 'I agree to the ',
-                    style: const TextStyle(color: AppColors.textLabel, fontSize: 14),
+                    style: TextStyle(color: AppColors.textLabel, fontSize: 14),
                     children: [
                       TextSpan(
                         text: 'Terms & Privacy Policy',
-                        style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
+                        style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
                         recognizer: onTermsTap,
                       ),
                     ],

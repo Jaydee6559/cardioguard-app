@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 /// Phone notifications for emergencies, so the caregiver is alerted even
@@ -27,6 +27,7 @@ class NotificationService {
     playSound: true,
     enableVibration: true,
     ticker: 'CardioGuard emergency',
+    color: Color(0xFF1547E6), // CardioGuard blue accent
   );
 
   /// Call once at app start.
@@ -35,7 +36,8 @@ class NotificationService {
     try {
       await _plugin.initialize(
         settings: const InitializationSettings(
-          android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+          // White heart in the status bar (android/app/src/main/res/drawable/ic_notification.xml)
+          android: AndroidInitializationSettings('ic_notification'),
         ),
       );
       _ready = true;

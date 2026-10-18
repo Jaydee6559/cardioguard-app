@@ -15,7 +15,7 @@ class VitalCard extends StatelessWidget {
   final String value;
   final String? unit;
   final String? status; // e.g. "Normal", "Resting"
-  final Color statusColor;
+  final Color? statusColor; // defaults to the muted text colour
   final double? progress; // 0..1, draws a bar (battery)
   final bool iconTile;
 
@@ -27,13 +27,14 @@ class VitalCard extends StatelessWidget {
     required this.value,
     this.unit,
     this.status,
-    this.statusColor = AppColors.textMuted,
+    this.statusColor,
     this.progress,
     this.iconTile = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return SectionCard(
       padding: const EdgeInsets.all(18),
       child: Column(
@@ -71,7 +72,7 @@ class VitalCard extends StatelessWidget {
               ),
               if (unit != null) ...[
                 const SizedBox(width: 4),
-                Text(unit!, style: const TextStyle(fontSize: 14, color: AppColors.textFaint)),
+                Text(unit!, style: TextStyle(fontSize: 14, color: AppColors.textFaint)),
               ],
             ],
           ),
@@ -83,13 +84,13 @@ class VitalCard extends StatelessWidget {
                 value: progress!.clamp(0.0, 1.0).toDouble(),
                 minHeight: 7,
                 color: progress! > 0.2 ? AppColors.success : AppColors.emergency,
-                backgroundColor: const Color(0xFFEFF2F6),
+                backgroundColor: AppColors.track,
               ),
             ),
           ],
           if (status != null) ...[
             const SizedBox(height: 6),
-            Text(status!, style: TextStyle(color: statusColor, fontWeight: FontWeight.w600, fontSize: 13.5)),
+            Text(status!, style: TextStyle(color: statusColor ?? AppColors.textMuted, fontWeight: FontWeight.w600, fontSize: 13.5)),
           ],
         ],
       ),

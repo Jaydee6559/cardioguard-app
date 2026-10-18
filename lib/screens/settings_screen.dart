@@ -37,7 +37,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        icon: const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 32),
+        icon: Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 32),
         title: const Text('Turn off fall alerts?'),
         content: const Text(
           "You won't be alerted if the device detects a fall. The wearer's device will still sound its buzzer.",
@@ -83,6 +83,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return SafeArea(
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -142,6 +143,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 14),
 
+          // Appearance: System / Light / Dark (saved on the phone)
+          SectionCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CardLabel('Appearance'),
+                const SizedBox(height: 12),
+                ValueListenableBuilder<ThemeMode>(
+                  valueListenable: AppState.themeMode,
+                  builder: (context, mode, _) => SizedBox(
+                    width: double.infinity,
+                    child: SegmentedButton<ThemeMode>(
+                      segments: const [
+                        ButtonSegment(value: ThemeMode.system, label: Text('System'), icon: Icon(Icons.phone_android)),
+                        ButtonSegment(value: ThemeMode.light, label: Text('Light'), icon: Icon(Icons.light_mode_outlined)),
+                        ButtonSegment(value: ThemeMode.dark, label: Text('Dark'), icon: Icon(Icons.dark_mode_outlined)),
+                      ],
+                      selected: {mode},
+                      showSelectedIcon: false,
+                      onSelectionChanged: (s) => AppState.setThemeMode(s.first),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'System follows your phone\'s dark mode setting.',
+                  style: TextStyle(color: AppColors.textFaint, fontSize: 12.5),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
           // Links to the Contacts and Device pages
           SectionCard(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
@@ -154,18 +188,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     label: 'Emergency contacts',
                     trailing: Text(
                       '${contacts.length} ${contacts.length == 1 ? 'contact' : 'contacts'}',
-                      style: const TextStyle(color: AppColors.textMuted, fontSize: 13.5),
+                      style: TextStyle(color: AppColors.textMuted, fontSize: 13.5),
                     ),
                     onTap: () => Navigator.of(context).pushNamed(AppRoutes.contacts),
                   ),
                 ),
-                const Divider(height: 1, color: AppColors.cardBorder),
+                Divider(height: 1, color: AppColors.cardBorder),
                 NavRow(
                   icon: Icons.watch_outlined,
                   label: 'Device & sensors',
                   trailing: MockData.deviceConnected
                       ? const _ConnectedText()
-                      : const Text('Offline', style: TextStyle(color: AppColors.textMuted, fontSize: 13.5)),
+                      : Text('Offline', style: TextStyle(color: AppColors.textMuted, fontSize: 13.5)),
                   onTap: () => Navigator.of(context).pushNamed(AppRoutes.device),
                 ),
               ],
@@ -196,16 +230,17 @@ class _ConnectedText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           width: 7,
           height: 7,
-          decoration: const BoxDecoration(color: AppColors.success, shape: BoxShape.circle),
+          decoration: BoxDecoration(color: AppColors.success, shape: BoxShape.circle),
         ),
         const SizedBox(width: 6),
-        const Text(
+        Text(
           'Connected',
           style: TextStyle(color: AppColors.success, fontSize: 13.5, fontWeight: FontWeight.w600),
         ),
@@ -221,6 +256,7 @@ class _ProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     final name = account?.name ?? MockData.caregiverName;
     final email = account?.email ?? MockData.caregiverEmail;
     final relationship = account?.relationship ?? '';
@@ -233,7 +269,7 @@ class _ProfileCard extends StatelessWidget {
             backgroundColor: AppColors.infoBg,
             child: Text(
               account?.initials ?? 'MS',
-              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 18),
+              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 18),
             ),
           ),
           const SizedBox(width: 16),
@@ -243,11 +279,11 @@ class _ProfileCard extends StatelessWidget {
               children: [
                 Text(
                   name,
-                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 2),
-                Text(email, style: const TextStyle(color: AppColors.textMuted, fontSize: 13.5)),
-                Text(role, style: const TextStyle(color: AppColors.textFaint, fontSize: 13)),
+                Text(email, style: TextStyle(color: AppColors.textMuted, fontSize: 13.5)),
+                Text(role, style: TextStyle(color: AppColors.textFaint, fontSize: 13)),
               ],
             ),
           ),

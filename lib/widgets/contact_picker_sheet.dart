@@ -30,6 +30,7 @@ class _ContactPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     final contacts = AppState.contacts.value;
     return SafeArea(
       child: ConstrainedBox(
@@ -38,18 +39,18 @@ class _ContactPicker extends StatelessWidget {
           shrinkWrap: true,
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
           children: [
-            const Text(
+            Text(
               'Contact someone',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Call, or send a text with the alert details already written.',
               style: TextStyle(color: AppColors.textMuted, fontSize: 13.5),
             ),
             const SizedBox(height: 14),
             if (contacts.isEmpty)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(vertical: 24),
                 child: Text(
                   'No emergency contacts yet. Add them in Settings → Emergency contacts.',
@@ -79,6 +80,7 @@ class _PickerRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
@@ -98,18 +100,18 @@ class _PickerRow extends StatelessWidget {
                       child: Text(
                         contact.name,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                       ),
                     ),
                     if (contact.primary) ...[
                       const SizedBox(width: 6),
-                      const Text('· Primary', style: TextStyle(color: AppColors.primary, fontSize: 12.5)),
+                      Text('· Primary', style: TextStyle(color: AppColors.primary, fontSize: 12.5)),
                     ],
                   ],
                 ),
                 Text(
                   '${contact.relationship} · ${contact.phone}',
-                  style: const TextStyle(color: AppColors.textMuted, fontSize: 13.5),
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 13.5),
                 ),
               ],
             ),

@@ -80,6 +80,7 @@ class _SignInScreenState extends State<SignInScreen> {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return Scaffold(
       body: SafeArea(
         child: CenteredScrollPage(
@@ -88,12 +89,12 @@ class _SignInScreenState extends State<SignInScreen> {
             children: [
               const AppLogo(size: 64),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'CardioGuard',
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
               ),
               const SizedBox(height: 6),
-              const Text(
+              Text(
                 'Caregiver Monitoring Dashboard',
                 style: TextStyle(fontSize: 15, color: AppColors.textMuted),
               ),
@@ -140,7 +141,7 @@ class _SignInScreenState extends State<SignInScreen> {
                             const SizedBox(width: 8),
                             GestureDetector(
                               onTap: () => setState(() => _rememberMe = !_rememberMe),
-                              child: const Text('Remember me', style: TextStyle(color: AppColors.textLabel)),
+                              child: Text('Remember me', style: TextStyle(color: AppColors.textLabel)),
                             ),
                             const Spacer(),
                             TextButton(
@@ -197,6 +198,7 @@ class _ErrorBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
@@ -207,9 +209,9 @@ class _ErrorBox extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.error_outline, color: AppColors.danger, size: 20),
+          Icon(Icons.error_outline, color: AppColors.danger, size: 20),
           const SizedBox(width: 8),
-          Expanded(child: Text(message, style: const TextStyle(color: AppColors.danger, fontSize: 13.5))),
+          Expanded(child: Text(message, style: TextStyle(color: AppColors.danger, fontSize: 13.5))),
         ],
       ),
     );

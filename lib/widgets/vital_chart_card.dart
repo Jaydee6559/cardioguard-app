@@ -49,6 +49,7 @@ class VitalChartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     final values = points.map((p) => p.y).toList();
     final latest = values.isEmpty ? null : values.last;
     final low = values.isEmpty ? 0.0 : values.reduce(math.min);
@@ -74,10 +75,10 @@ class VitalChartCard extends StatelessWidget {
                       children: [
                         Text(
                           latest == null ? '—' : latest.toStringAsFixed(0),
-                          style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                          style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                         ),
                         const SizedBox(width: 4),
-                        Text(unit, style: const TextStyle(fontSize: 14, color: AppColors.textFaint)),
+                        Text(unit, style: TextStyle(fontSize: 14, color: AppColors.textFaint)),
                       ],
                     ),
                   ],
@@ -90,7 +91,7 @@ class VitalChartCard extends StatelessWidget {
           SizedBox(
             height: 170,
             child: points.isEmpty
-                ? const Center(child: Text('No readings yet', style: TextStyle(color: AppColors.textFaint)))
+                ? Center(child: Text('No readings yet', style: TextStyle(color: AppColors.textFaint)))
                 : LineChart(_chartData()),
           ),
           const SizedBox(height: 12),
@@ -103,14 +104,14 @@ class VitalChartCard extends StatelessWidget {
               ],
             ),
           const SizedBox(height: 10),
-          Text(caption, style: const TextStyle(color: AppColors.textMuted, fontSize: 13.5)),
+          Text(caption, style: TextStyle(color: AppColors.textMuted, fontSize: 13.5)),
         ],
       ),
     );
   }
 
   LineChartData _chartData() {
-    const axisStyle = TextStyle(color: AppColors.textFaint, fontSize: 11);
+    final axisStyle = TextStyle(color: AppColors.textFaint, fontSize: 11);
     return LineChartData(
       minX: minX,
       maxX: maxX,
@@ -123,8 +124,8 @@ class VitalChartCard extends StatelessWidget {
         drawVerticalLine: true,
         horizontalInterval: yInterval,
         verticalInterval: xInterval,
-        getDrawingHorizontalLine: (_) => const FlLine(color: Color(0xFFEDF0F4), strokeWidth: 1),
-        getDrawingVerticalLine: (_) => const FlLine(color: Color(0xFFF3F5F8), strokeWidth: 1, dashArray: [4, 4]),
+        getDrawingHorizontalLine: (_) => FlLine(color: AppColors.chartGrid, strokeWidth: 1),
+        getDrawingVerticalLine: (_) => FlLine(color: AppColors.chartGridFaint, strokeWidth: 1, dashArray: const [4, 4]),
       ),
       rangeAnnotations: RangeAnnotations(
         horizontalRangeAnnotations: [
@@ -163,7 +164,7 @@ class VitalChartCard extends StatelessWidget {
       ),
       lineTouchData: LineTouchData(
         touchTooltipData: LineTouchTooltipData(
-          getTooltipColor: (_) => AppColors.textPrimary,
+          getTooltipColor: (_) => AppColors.isDark ? AppColors.field : AppColors.textPrimary,
           getTooltipItems: (spots) => [
             for (final s in spots)
               LineTooltipItem(
@@ -198,14 +199,15 @@ class _Stat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(color: AppColors.textFaint, fontSize: 12)),
+          Text(label, style: TextStyle(color: AppColors.textFaint, fontSize: 12)),
           Text(
             '${value.toStringAsFixed(0)} $unit',
-            style: const TextStyle(color: AppColors.textLabel, fontWeight: FontWeight.w600, fontSize: 14),
+            style: TextStyle(color: AppColors.textLabel, fontWeight: FontWeight.w600, fontSize: 14),
           ),
         ],
       ),

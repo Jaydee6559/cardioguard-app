@@ -10,17 +10,18 @@ class InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 7),
       child: Row(
         children: [
-          Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 15)),
+          Text(label, style: TextStyle(color: AppColors.textMuted, fontSize: 15)),
           const SizedBox(width: 16),
           Expanded(
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w500),
+              style: TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w500),
             ),
           ),
         ],
@@ -40,6 +41,7 @@ class SwitchRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return InkWell(
       borderRadius: BorderRadius.circular(8),
       onTap: () => onChanged(!value),
@@ -51,9 +53,9 @@ class SwitchRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: const TextStyle(color: AppColors.textLabel, fontSize: 15)),
+                  Text(label, style: TextStyle(color: AppColors.textLabel, fontSize: 15)),
                   if (subtitle != null)
-                    Text(subtitle!, style: const TextStyle(color: AppColors.textFaint, fontSize: 12.5)),
+                    Text(subtitle!, style: TextStyle(color: AppColors.textFaint, fontSize: 12.5)),
                 ],
               ),
             ),
@@ -76,6 +78,7 @@ class NavRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return InkWell(
       borderRadius: BorderRadius.circular(8),
       onTap: onTap,
@@ -85,10 +88,10 @@ class NavRow extends StatelessWidget {
           children: [
             Icon(icon, size: 22, color: AppColors.textMuted),
             const SizedBox(width: 12),
-            Expanded(child: Text(label, style: const TextStyle(color: AppColors.textLabel, fontSize: 15))),
+            Expanded(child: Text(label, style: TextStyle(color: AppColors.textLabel, fontSize: 15))),
             if (trailing != null) trailing!,
             const SizedBox(width: 4),
-            const Icon(Icons.chevron_right, color: AppColors.textFaint),
+            Icon(Icons.chevron_right, color: AppColors.textFaint),
           ],
         ),
       ),
@@ -106,13 +109,14 @@ class SubpageAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return AppBar(
       backgroundColor: AppColors.background,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       leading: IconButton(
         tooltip: 'Back',
-        icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+        icon: Icon(Icons.arrow_back, color: AppColors.textPrimary),
         onPressed: () => Navigator.of(context).pop(),
       ),
       actions: [if (action != null) Padding(padding: const EdgeInsets.only(right: 12), child: action)],

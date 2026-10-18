@@ -89,6 +89,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return ValueListenableBuilder<List<AlertEvent>>(
       valueListenable: AppState.events,
       builder: (context, events, _) {
@@ -105,7 +106,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
                     : IconButton(
                         tooltip: 'Clear history',
                         onPressed: _clearHistory,
-                        icon: const Icon(Icons.delete_sweep_outlined, color: AppColors.textMuted),
+                        icon: Icon(Icons.delete_sweep_outlined, color: AppColors.textMuted),
                       ),
               ),
               const SizedBox(height: 14),
@@ -122,7 +123,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
               ),
               const SizedBox(height: 14),
               if (visible.isEmpty)
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(vertical: 48),
                   child: Column(
                     children: [
@@ -154,7 +155,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
         showCheckmark: false,
         onSelected: (_) => setState(() => _filter = severity),
         selectedColor: AppColors.primary,
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         side: BorderSide(color: selected ? AppColors.primary : AppColors.cardBorder),
         labelStyle: TextStyle(
           color: selected ? Colors.white : AppColors.textLabel,
@@ -174,14 +175,15 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+          Text(label, style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
           const SizedBox(height: 2),
-          Text(value, style: const TextStyle(color: AppColors.textPrimary, fontSize: 15)),
+          Text(value, style: TextStyle(color: AppColors.textPrimary, fontSize: 15)),
         ],
       ),
     );

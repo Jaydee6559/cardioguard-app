@@ -11,6 +11,7 @@ class SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
     return Container(
       width: double.infinity,
       padding: padding,
@@ -28,13 +29,15 @@ class SectionCard extends StatelessWidget {
 /// Small uppercase grey label inside a card, e.g. "OVERALL STATUS".
 class CardLabel extends StatelessWidget {
   final String text;
-  final Color color;
+  final Color? color; // defaults to the muted text colour
   final IconData? icon;
 
-  const CardLabel(this.text, {super.key, this.color = AppColors.textMuted, this.icon});
+  const CardLabel(this.text, {super.key, this.color, this.icon});
 
   @override
   Widget build(BuildContext context) {
+    AppColors.watch(context);
+    final color = this.color ?? AppColors.textMuted;
     final label = Text(
       text.toUpperCase(),
       style: TextStyle(fontSize: 12.5, letterSpacing: 1.1, color: color, fontWeight: FontWeight.w500),
