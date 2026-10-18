@@ -6,14 +6,21 @@ import '../data/app_state.dart';
 import '../data/mock_data.dart';
 import '../models/alert_event.dart';
 import '../routes.dart';
+import '../services/alarm_service.dart';
+import '../services/notification_service.dart';
 import '../theme.dart';
+import '../widgets/contact_picker_sheet.dart';
 import 'emergency_alert_screen.dart';
 
-/// Screen 08 — Possible Fall Detected.
+/// Screen 08 — Possible Fall Detected (caregiver's view).
 ///
-/// Counts down from 15 s. The wearer can answer I'M OK (cancel) or
-/// NEED HELP (escalate now). If the timer runs out, No Response opens.
-/// The Back button is blocked so the check can't be dismissed by accident.
+/// The WEARER answers on the device (buzzer + acknowledge button). The
+/// caregiver sees the countdown: "Waiting for Roberto to respond… 9s".
+/// If Roberto doesn't respond in time, No Response opens. The caregiver can
+/// also raise the alert straight away or contact someone.
+///
+/// Alarm sound + vibration and a phone notification start here and keep
+/// going until someone responds. Back is blocked so it can't be dismissed.
 class FallDetectedScreen extends StatefulWidget {
   const FallDetectedScreen({super.key});
 
@@ -23,6 +30,8 @@ class FallDetectedScreen extends StatefulWidget {
 
 class _FallDetectedScreenState extends State<FallDetectedScreen> {
   static const _total = MockData.fallCountdownSeconds;
+  static final _firstName = MockData.wearerName.split(' ').first;
+
   int _secondsLeft = _total;
   Timer? _timer;
 
@@ -30,6 +39,11 @@ class _FallDetectedScreenState extends State<FallDetectedScreen> {
   void initState() {
     super.initState();
     AppState.logEvent('Possible Fall Detected', 'Fall check started (simulated from the dashboard).', Severity.emergency);
+    AlarmService.start();
+    NotificationService.showEmergency(
+      'Possible fall detected',
+      'Waiting for $_firstName to respond on the device. Open CardioGuard.',
+    );
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
   }
 
@@ -42,43 +56,59 @@ class _FallDetectedScreenState extends State<FallDetectedScreen> {
   void _tick() {
     if (_secondsLeft <= 1) {
       _timer?.cancel();
-      AppState.logEvent(
-        'No Response Detected',
-        'Wearer did not respond within ${MockData.fallCountdownSeconds} s after fall.',
-        Severity.emergency,
-      );
+      AppState.logEvent('No Response Detected', 'Wearer did not respond within $_total s after fall.', Severity.emergency);
+      // Alarm keeps ringing into No Response and Emergency Alert.
       Navigator.of(context).pushReplacementNamed(AppRoutes.noResponse);
       return;
     }
     setState(() => _secondsLeft--);
   }
 
-  void _imOk() {
+  /// DEMO ONLY: pretends Roberto pressed the acknowledge button on his
+  /// device. Replaced by the real button press once the Arduino is connected.
+  void _wearerIsOk() {
     _timer?.cancel();
+    AlarmService.stop();
+    NotificationService.clear();
     AppState.logEvent('Post-fall Response', "Wearer confirmed 'I'm OK' after fall detection.", Severity.info);
     final messenger = ScaffoldMessenger.of(context); // grab before leaving the page
     Navigator.of(context).pop();
     messenger.showSnackBar(
-      const SnackBar(content: Text("Glad you're OK. The event was recorded.")),
+      SnackBar(content: Text("$_firstName pressed I'M OK on the device. The event was recorded.")),
     );
   }
 
-  void _needHelp() {
+  /// Caregiver doesn't want to wait: raise the emergency now.
+  void _raiseAlertNow() {
     _timer?.cancel();
-    AppState.logEvent('Help Requested', 'Wearer tapped NEED HELP during the fall check.', Severity.emergency);
-    Navigator.of(context).pushReplacementNamed(AppRoutes.emergencyAlert, arguments: EmergencyAlertArgs.helpRequested);
+    AppState.logEvent('Alert Raised by Caregiver', 'Caregiver escalated the fall check before the countdown ended.', Severity.emergency);
+    Navigator.of(context).pushReplacementNamed(AppRoutes.emergencyAlert, arguments: EmergencyAlertArgs.caregiverRaised);
+  }
+
+  void _contactSomeone() {
+    showContactPicker(
+      context,
+      smsMessage: 'CardioGuard: a possible fall was detected for ${MockData.wearerName}. '
+          'Waiting for him to respond. Please check on him if you can.',
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final progress = _secondsLeft / _total;
     return PopScope(
       canPop: false,
       child: Scaffold(
         backgroundColor: AppColors.cream,
         body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
+          // Fills the screen on normal phones, scrolls on small ones.
+          child: LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
+                child: IntrinsicHeight(
+                  child: Column(
               children: [
                 const Spacer(),
                 Container(
@@ -100,70 +130,107 @@ class _FallDetectedScreenState extends State<FallDetectedScreen> {
                   style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'The device detected a sudden impact. Please confirm your condition.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 15.5, color: AppColors.textMuted, height: 1.4),
-                ),
-                const SizedBox(height: 32),
-                const Text(
-                  'RESPONDING IN',
-                  style: TextStyle(fontSize: 13, letterSpacing: 1.4, color: AppColors.textMuted),
-                ),
-                const SizedBox(height: 4),
                 Text(
-                  '${_secondsLeft}s',
-                  style: const TextStyle(fontSize: 64, fontWeight: FontWeight.w800, color: Color(0xFFD97706)),
+                  "$_firstName's device detected a sudden impact.",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 15.5, color: AppColors.textMuted, height: 1.4),
                 ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: 200,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween(end: _secondsLeft / _total),
-                      duration: const Duration(milliseconds: 900),
-                      builder: (context, value, _) => LinearProgressIndicator(
-                        value: value,
-                        minHeight: 8,
-                        color: AppColors.warning,
-                        backgroundColor: const Color(0xFFFDE68A),
+                const SizedBox(height: 28),
+
+                // Waiting card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: const Color(0xFFF3E3B5)),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.warning),
+                          ),
+                          const SizedBox(width: 10),
+                          Flexible(
+                            child: Text(
+                              'Waiting for $_firstName to respond…',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textLabel),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${_secondsLeft}s',
+                        style: const TextStyle(fontSize: 56, fontWeight: FontWeight.w800, color: Color(0xFFD97706)),
+                      ),
+                      const SizedBox(height: 8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: TweenAnimationBuilder<double>(
+                          tween: Tween(end: progress),
+                          duration: const Duration(milliseconds: 900),
+                          builder: (context, value, _) => LinearProgressIndicator(
+                            value: value,
+                            minHeight: 8,
+                            color: AppColors.warning,
+                            backgroundColor: const Color(0xFFFDE68A),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        '$_firstName can press the button on his device to say he\'s OK. '
+                        'If there is no answer, an emergency alert is raised automatically.',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 13.5, color: AppColors.textMuted, height: 1.4),
+                      ),
+                    ],
                   ),
                 ),
                 const Spacer(),
-                _BigButton(label: "I'M OK", color: AppColors.success, onPressed: _imOk),
-                const SizedBox(height: 14),
-                _BigButton(label: 'NEED HELP', color: AppColors.emergency, onPressed: _needHelp),
-                const SizedBox(height: 8),
+
+                // Caregiver actions
+                FilledButton.icon(
+                  onPressed: _raiseAlertNow,
+                  icon: const Icon(Icons.campaign_outlined),
+                  label: const Text('Raise Alert Now'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.emergency,
+                    minimumSize: const Size.fromHeight(56),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: _contactSomeone,
+                  icon: const Icon(Icons.contact_phone_outlined),
+                  label: const Text('Call or Text a Contact'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(52),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                // Demo-only: stands in for the wearer's acknowledge button.
+                TextButton(
+                  onPressed: _wearerIsOk,
+                  style: TextButton.styleFrom(foregroundColor: AppColors.textMuted),
+                  child: Text("Demo: $_firstName pressed I'M OK"),
+                ),
               ],
+                  ),
+                ),
+              ),
             ),
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Extra-large button: easy to hit for someone who may be shaken or on the floor.
-class _BigButton extends StatelessWidget {
-  final String label;
-  final Color color;
-  final VoidCallback onPressed;
-  const _BigButton({required this.label, required this.color, required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    return FilledButton(
-      onPressed: onPressed,
-      style: FilledButton.styleFrom(
-        backgroundColor: color,
-        minimumSize: const Size.fromHeight(64),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        textStyle: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800, letterSpacing: 0.5),
-      ),
-      child: Text(label),
     );
   }
 }

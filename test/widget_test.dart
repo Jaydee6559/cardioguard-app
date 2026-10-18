@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:cardioguard/data/app_state.dart';
 import 'package:cardioguard/main.dart';
+import 'package:cardioguard/services/alarm_service.dart';
+import 'package:cardioguard/services/notification_service.dart';
 
 const testEmail = 'caregiver@cardioguard.app';
 const testPassword = 'password123';
@@ -19,6 +21,9 @@ Future<void> signIn(WidgetTester tester, {String password = testPassword}) async
 void main() {
   // Every test starts with empty phone storage and one saved account.
   setUp(() async {
+    // No speaker, vibrator or notification system in tests.
+    AlarmService.enabled = false;
+    NotificationService.enabled = false;
     SharedPreferences.setMockInitialValues({});
     await AppState.init();
     await AppState.createAccount(
@@ -64,7 +69,7 @@ void main() {
     expect(find.text('Set up your caregiver account'), findsOneWidget);
   });
 
-  testWidgets('Sign in opens the dashboard; I\'M OK is logged in Alerts', (tester) async {
+  testWidgets('Sign in opens the dashboard; the fall check waits for the wearer', (tester) async {
     await tester.pumpWidget(const CardioGuardApp());
     await signIn(tester);
 
@@ -73,11 +78,15 @@ void main() {
 
     await tester.ensureVisible(find.text('Simulate Fall'));
     await tester.tap(find.text('Simulate Fall'));
-    await tester.pumpAndSettle();
+    // The "waiting" spinner never stops, so pump a fixed time instead of settling.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('Possible Fall Detected'), findsOneWidget);
+    expect(find.text('Waiting for Roberto to respond…'), findsOneWidget);
 
-    // Answer the check so its countdown timer stops before the test ends.
-    await tester.tap(find.text("I'M OK"));
+    // Demo stand-in for the wearer's button; also stops the countdown timer.
+    await tester.ensureVisible(find.text("Demo: Roberto pressed I'M OK"));
+    await tester.tap(find.text("Demo: Roberto pressed I'M OK"));
     await tester.pumpAndSettle();
     expect(find.text('Roberto Santos'), findsOneWidget);
 
@@ -147,5 +156,25 @@ void main() {
 
     expect(AppState.contacts.value.length, 1);
     expect(AppState.events.value.first.title, 'Test event');
+  });
+
+  testWidgets('SOS opens the Emergency Alert with call, text and other contacts', (tester) async {
+    await tester.pumpWidget(const CardioGuardApp());
+    await signIn(tester);
+
+    await tester.ensureVisible(find.text('Send SOS'));
+    await tester.tap(find.text('Send SOS'));
+    await tester.pumpAndSettle();
+    // Confirm in the dialog (the dashboard's own Send SOS button is behind it).
+    await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text('Send SOS')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Emergency Alert'), findsOneWidget);
+    expect(find.text('Call Maria Santos'), findsOneWidget);
+
+    await tester.tap(find.text('Other Contacts'));
+    await tester.pumpAndSettle();
+    expect(find.text('Contact someone'), findsOneWidget);
+    expect(find.text('Dr. Reyes'), findsOneWidget);
   });
 }

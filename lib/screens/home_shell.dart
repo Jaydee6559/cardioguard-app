@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/notification_service.dart';
 import 'alerts_screen.dart';
 import 'dashboard_screen.dart';
 import 'settings_screen.dart';
@@ -18,6 +19,13 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Android 13+ asks "Allow CardioGuard to send notifications?" the first time.
+    NotificationService.requestPermission();
+  }
 
   static const _tabs = <Widget>[
     DashboardScreen(),

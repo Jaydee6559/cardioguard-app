@@ -10,11 +10,13 @@ import 'screens/fall_detected_screen.dart';
 import 'screens/home_shell.dart';
 import 'screens/no_response_screen.dart';
 import 'screens/sign_in_screen.dart';
+import 'services/notification_service.dart';
 import 'theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppState.init(); // load saved accounts, contacts, settings and events
+  await NotificationService.init(); // emergency notifications
   runApp(const CardioGuardApp());
 }
 

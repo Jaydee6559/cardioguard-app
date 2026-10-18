@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../data/app_state.dart';
 import '../data/mock_data.dart';
 import '../models/alert_event.dart';
+import '../models/emergency_contact.dart';
 import '../routes.dart';
+import '../services/alarm_service.dart';
+import '../services/contact_actions.dart';
+import '../services/notification_service.dart';
 import '../theme.dart';
 import '../utils/formatters.dart';
+import '../widgets/contact_picker_sheet.dart';
 
 /// Why the Emergency Alert was raised. Passed as the route's arguments.
 class EmergencyAlertArgs {
@@ -23,6 +27,10 @@ class EmergencyAlertArgs {
     'Help requested after a fall',
     'The wearer tapped NEED HELP during the fall check.',
   );
+  static const caregiverRaised = EmergencyAlertArgs(
+    'Possible fall detected',
+    'The caregiver raised the alert during the fall check. Immediate attention may be required.',
+  );
   static const sos = EmergencyAlertArgs(
     'SOS button pressed',
     'The wearer asked for help. Immediate attention may be required.',
@@ -31,8 +39,9 @@ class EmergencyAlertArgs {
 
 /// Screen 10 — Emergency Alert (full red screen).
 ///
-/// Can only be left with Acknowledge Alert, so it is never dismissed by
-/// accident.
+/// Alarm sound + vibration and a phone notification keep going until the
+/// caregiver taps Acknowledge Alert (the sound can be muted). Back is
+/// blocked, so the screen is never dismissed by accident.
 class EmergencyAlertScreen extends StatefulWidget {
   const EmergencyAlertScreen({super.key});
 
@@ -42,6 +51,20 @@ class EmergencyAlertScreen extends StatefulWidget {
 
 class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
   final DateTime _raisedAt = DateTime.now();
+  bool _started = false;
+  bool _muted = AlarmService.isMuted;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return; // run once; the route arguments are ready here
+    _started = true;
+    AlarmService.start(); // already ringing if we came from the fall check
+    NotificationService.showEmergency(
+      'EMERGENCY: ${MockData.wearerName.split(' ').first} needs help',
+      _args.detail,
+    );
+  }
 
   EmergencyAlertArgs get _args {
     final a = ModalRoute.of(context)?.settings.arguments;
@@ -53,24 +76,41 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
   String get _contactRelationship => AppState.primaryContact?.relationship ?? MockData.contactRelationship;
   String get _contactPhone => AppState.primaryContact?.phone ?? MockData.contactPhone;
 
-  Future<void> _callContact() async {
-    final uri = Uri(scheme: 'tel', path: _contactPhone.replaceAll(' ', ''));
-    bool opened;
-    try {
-      opened = await launchUrl(uri);
-    } catch (_) {
-      opened = false;
+  /// Pre-written text for SMS messages to contacts.
+  String get _smsMessage =>
+      'EMERGENCY from CardioGuard: ${_args.title} for ${MockData.wearerName} at ${Formatters.clock(_raisedAt)}. '
+      '${_args.detail} Please check on him or call 911.';
+
+  Future<void> _run(Future<bool> Function(EmergencyContact c) action) async {
+    final primary = AppState.primaryContact;
+    if (primary == null) {
+      _otherContacts(); // no contacts saved: the sheet explains how to add them
+      return;
     }
-    if (opened) {
-      AppState.logEvent('Emergency Contact Called', 'Called $_contactName ($_contactPhone).', Severity.info);
-    } else if (mounted) {
+    final ok = await action(primary);
+    if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open the phone dialer.')),
+        const SnackBar(content: Text("Couldn't open the phone app on this device.")),
       );
     }
   }
 
+  void _callPrimary() => _run(ContactActions.call);
+  void _textPrimary() => _run((c) => ContactActions.text(c, _smsMessage));
+  void _otherContacts() => showContactPicker(context, smsMessage: _smsMessage);
+
+  Future<void> _toggleMute() async {
+    if (_muted) {
+      await AlarmService.unmute();
+    } else {
+      await AlarmService.mute();
+    }
+    if (mounted) setState(() => _muted = AlarmService.isMuted);
+  }
+
   void _acknowledge() {
+    AlarmService.stop();
+    NotificationService.clear();
     AppState.logEvent('Alert Acknowledged', 'Caregiver acknowledged: ${_args.title.toLowerCase()}.', Severity.info);
     final messenger = ScaffoldMessenger.of(context);
     // Back to the dashboard (it is the first page when "Remember me" opened it).
@@ -150,6 +190,14 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
                               ],
                             ),
                           ),
+                          IconButton(
+                            tooltip: _muted ? 'Turn alarm sound on' : 'Mute alarm sound',
+                            onPressed: _toggleMute,
+                            icon: Icon(
+                              _muted ? Icons.volume_off_outlined : Icons.volume_up_outlined,
+                              color: Colors.white,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 20),
@@ -196,13 +244,33 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
                   child: Column(
                     children: [
                       FilledButton.icon(
-                        onPressed: _callContact,
+                        onPressed: _callPrimary,
                         icon: const Icon(Icons.call),
-                        label: const Text('Call Emergency Contact'),
+                        label: Text('Call $_contactName'),
                         style: FilledButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: const Color(0xFFB91C1C),
                         ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _OutlineWhiteButton(
+                              icon: Icons.sms_outlined,
+                              label: 'Text $_contactName'.length > 18 ? 'Send Text' : 'Text $_contactName',
+                              onPressed: _textPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _OutlineWhiteButton(
+                              icon: Icons.contacts_outlined,
+                              label: 'Other Contacts',
+                              onPressed: _otherContacts,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 10),
                       FilledButton(
@@ -318,6 +386,29 @@ class _DetailRow extends StatelessWidget {
           const SizedBox(height: 2),
           Text(value, style: const TextStyle(color: AppColors.textPrimary, fontSize: 15)),
         ],
+      ),
+    );
+  }
+}
+
+/// White-outlined button on the red background.
+class _OutlineWhiteButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+  const _OutlineWhiteButton({required this.icon, required this.label, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 20),
+      label: Text(label, overflow: TextOverflow.ellipsis),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.white,
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.6)),
+        minimumSize: const Size.fromHeight(48),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

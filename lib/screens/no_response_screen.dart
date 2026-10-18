@@ -2,7 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../data/mock_data.dart';
 import '../routes.dart';
+import '../services/alarm_service.dart';
+import '../services/notification_service.dart';
 import '../theme.dart';
 import 'emergency_alert_screen.dart';
 
@@ -27,6 +30,11 @@ class _NoResponseScreenState extends State<NoResponseScreen> {
   @override
   void initState() {
     super.initState();
+    AlarmService.start(); // keeps ringing from the fall check
+    NotificationService.showEmergency(
+      'No response from ${MockData.wearerName.split(' ').first}',
+      'Sending an emergency alert now.',
+    );
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (_secondsLeft <= 1) {
         _send();

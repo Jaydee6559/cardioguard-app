@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../data/app_state.dart';
+import '../data/mock_data.dart';
 import '../models/emergency_contact.dart';
+import '../services/contact_actions.dart';
 import '../theme.dart';
 import '../widgets/auth_widgets.dart';
 import '../widgets/screen_header.dart';
@@ -55,15 +56,17 @@ class ContactsScreen extends StatelessWidget {
     if (confirmed == true) await AppState.deleteContact(index);
   }
 
-  Future<void> _call(BuildContext context, EmergencyContact c) async {
-    var opened = false;
-    try {
-      opened = await launchUrl(Uri(scheme: 'tel', path: c.phone.replaceAll(' ', '')));
-    } catch (_) {
-      // No dialer available; handled below.
-    }
-    if (!opened && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open the phone dialer.')));
+  Future<void> _call(BuildContext context, EmergencyContact c) => _run(context, () => ContactActions.call(c));
+
+  Future<void> _text(BuildContext context, EmergencyContact c) => _run(
+        context,
+        () => ContactActions.text(c, 'Hi ${c.name}, this is a message from CardioGuard about ${MockData.wearerName}.'),
+      );
+
+  Future<void> _run(BuildContext context, Future<bool> Function() action) async {
+    final messenger = ScaffoldMessenger.of(context);
+    if (!await action()) {
+      messenger.showSnackBar(const SnackBar(content: Text("Couldn't open the phone app on this device.")));
     }
   }
 
@@ -109,6 +112,7 @@ class ContactsScreen extends StatelessWidget {
                 _ContactCard(
                   contact: contacts[i],
                   onCall: () => _call(context, contacts[i]),
+                  onText: () => _text(context, contacts[i]),
                   onEdit: () => _openForm(context, existing: contacts[i], index: i),
                   onDelete: () => _delete(context, contacts[i], i),
                 ),
@@ -124,10 +128,17 @@ class ContactsScreen extends StatelessWidget {
 class _ContactCard extends StatelessWidget {
   final EmergencyContact contact;
   final VoidCallback onCall;
+  final VoidCallback onText;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
-  const _ContactCard({required this.contact, required this.onCall, required this.onEdit, required this.onDelete});
+  const _ContactCard({
+    required this.contact,
+    required this.onCall,
+    required this.onText,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -163,6 +174,11 @@ class _ContactCard extends StatelessWidget {
                 ),
               ],
               const Spacer(),
+              IconButton(
+                tooltip: 'Text',
+                onPressed: onText,
+                icon: const Icon(Icons.sms_outlined, color: AppColors.primary),
+              ),
               IconButton(
                 tooltip: 'Call',
                 onPressed: onCall,
