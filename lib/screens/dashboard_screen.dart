@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../data/app_state.dart';
 import '../data/mock_data.dart';
+import '../models/alert_event.dart';
 import '../routes.dart';
 import '../theme.dart';
 import '../utils/formatters.dart';
@@ -42,6 +44,7 @@ class DashboardScreen extends StatelessWidget {
       ),
     );
     if (confirmed == true && context.mounted) {
+      AppState.logEvent('Manual SOS', 'SOS sent from the dashboard.', Severity.emergency);
       Navigator.of(context).pushNamed(AppRoutes.emergencyAlert, arguments: EmergencyAlertArgs.sos);
     }
   }

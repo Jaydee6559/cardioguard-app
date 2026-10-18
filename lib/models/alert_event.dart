@@ -14,6 +14,20 @@ class AlertEvent {
     required this.severity,
     required this.time,
   });
+
+  Map<String, dynamic> toJson() => {
+        'title': title,
+        'description': description,
+        'severity': severity.name,
+        'time': time.millisecondsSinceEpoch,
+      };
+
+  static AlertEvent fromJson(Map<String, dynamic> j) => AlertEvent(
+        title: j['title'] as String? ?? '',
+        description: j['description'] as String? ?? '',
+        severity: Severity.values.asNameMap()[j['severity']] ?? Severity.info,
+        time: DateTime.fromMillisecondsSinceEpoch(j['time'] as int? ?? 0),
+      );
 }
 
 /// One point on a Vitals chart.

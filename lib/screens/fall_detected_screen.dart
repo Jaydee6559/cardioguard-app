@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../data/app_state.dart';
 import '../data/mock_data.dart';
+import '../models/alert_event.dart';
 import '../routes.dart';
 import '../theme.dart';
 import 'emergency_alert_screen.dart';
@@ -27,6 +29,7 @@ class _FallDetectedScreenState extends State<FallDetectedScreen> {
   @override
   void initState() {
     super.initState();
+    AppState.logEvent('Possible Fall Detected', 'Fall check started (simulated from the dashboard).', Severity.emergency);
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
   }
 
@@ -39,6 +42,11 @@ class _FallDetectedScreenState extends State<FallDetectedScreen> {
   void _tick() {
     if (_secondsLeft <= 1) {
       _timer?.cancel();
+      AppState.logEvent(
+        'No Response Detected',
+        'Wearer did not respond within ${MockData.fallCountdownSeconds} s after fall.',
+        Severity.emergency,
+      );
       Navigator.of(context).pushReplacementNamed(AppRoutes.noResponse);
       return;
     }
@@ -47,6 +55,7 @@ class _FallDetectedScreenState extends State<FallDetectedScreen> {
 
   void _imOk() {
     _timer?.cancel();
+    AppState.logEvent('Post-fall Response', "Wearer confirmed 'I'm OK' after fall detection.", Severity.info);
     final messenger = ScaffoldMessenger.of(context); // grab before leaving the page
     Navigator.of(context).pop();
     messenger.showSnackBar(
@@ -56,6 +65,7 @@ class _FallDetectedScreenState extends State<FallDetectedScreen> {
 
   void _needHelp() {
     _timer?.cancel();
+    AppState.logEvent('Help Requested', 'Wearer tapped NEED HELP during the fall check.', Severity.emergency);
     Navigator.of(context).pushReplacementNamed(AppRoutes.emergencyAlert, arguments: EmergencyAlertArgs.helpRequested);
   }
 

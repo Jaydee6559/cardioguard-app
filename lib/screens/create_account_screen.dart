@@ -1,14 +1,15 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+import '../data/app_state.dart';
 import '../theme.dart';
 import '../utils/validators.dart';
 import '../widgets/auth_widgets.dart';
 
 /// Screen 01b — Create Account.
 ///
-/// UI only for now: on success it returns the email to Sign In, which fills
-/// it in. Saving the account comes in the data-storage stage.
+/// Saves the account on this phone (password stored as a hash), then
+/// returns the email to Sign In, which fills it in.
 class CreateAccountScreen extends StatefulWidget {
   const CreateAccountScreen({super.key});
 
@@ -64,11 +65,18 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     setState(() => _submitting = true);
-    // Short pause so the button shows it is working. Replace with saving the
-    // account later.
-    await Future<void>.delayed(const Duration(milliseconds: 800));
+    final error = await AppState.createAccount(
+      name: _name.text,
+      email: _email.text,
+      password: _password.text,
+      relationship: relationshipValue,
+    );
     if (!mounted) return;
     setState(() => _submitting = false);
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+      return;
+    }
     Navigator.of(context).pop(_email.text.trim());
   }
 
@@ -150,7 +158,10 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                                 keyboardType: TextInputType.emailAddress,
                                 textInputAction: TextInputAction.next,
                                 autofillHints: const [AutofillHints.email],
-                                validator: Validators.email,
+                                // Valid format, and not already registered on this phone.
+                                validator: (v) =>
+                                    Validators.email(v) ??
+                                    (AppState.hasAccount(v ?? '') ? 'An account with this email already exists' : null),
                               ),
                               const SizedBox(height: 16),
                               PasswordField(

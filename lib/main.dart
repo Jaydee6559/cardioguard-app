@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'data/app_state.dart';
 import 'routes.dart';
 import 'screens/contacts_screen.dart';
 import 'screens/create_account_screen.dart';
@@ -11,7 +12,9 @@ import 'screens/no_response_screen.dart';
 import 'screens/sign_in_screen.dart';
 import 'theme.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AppState.init(); // load saved accounts, contacts, settings and events
   runApp(const CardioGuardApp());
 }
 
@@ -24,7 +27,19 @@ class CardioGuardApp extends StatelessWidget {
       title: 'CardioGuard',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      initialRoute: AppRoutes.signIn,
+      // First screen: the dashboard if "Remember me" kept someone signed in,
+      // otherwise Sign In.
+      onGenerateInitialRoutes: (_) => [
+        AppState.isSignedIn
+            ? MaterialPageRoute<void>(
+                settings: const RouteSettings(name: AppRoutes.home),
+                builder: (_) => const HomeShell(),
+              )
+            : MaterialPageRoute<void>(
+                settings: const RouteSettings(name: AppRoutes.signIn),
+                builder: (_) => const SignInScreen(),
+              ),
+      ],
       routes: {
         AppRoutes.signIn: (_) => const SignInScreen(),
         AppRoutes.createAccount: (_) => const CreateAccountScreen(),

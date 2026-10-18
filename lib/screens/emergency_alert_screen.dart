@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../data/app_state.dart';
 import '../data/mock_data.dart';
+import '../models/alert_event.dart';
 import '../routes.dart';
 import '../theme.dart';
 import '../utils/formatters.dart';
@@ -60,7 +61,9 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
     } catch (_) {
       opened = false;
     }
-    if (!opened && mounted) {
+    if (opened) {
+      AppState.logEvent('Emergency Contact Called', 'Called $_contactName ($_contactPhone).', Severity.info);
+    } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Could not open the phone dialer.')),
       );
@@ -68,8 +71,10 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
   }
 
   void _acknowledge() {
+    AppState.logEvent('Alert Acknowledged', 'Caregiver acknowledged: ${_args.title.toLowerCase()}.', Severity.info);
     final messenger = ScaffoldMessenger.of(context);
-    Navigator.of(context).popUntil(ModalRoute.withName(AppRoutes.home));
+    // Back to the dashboard (it is the first page when "Remember me" opened it).
+    Navigator.of(context).popUntil((r) => r.settings.name == AppRoutes.home || r.isFirst);
     messenger.showSnackBar(const SnackBar(content: Text('Alert acknowledged.')));
   }
 

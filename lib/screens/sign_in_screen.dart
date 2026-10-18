@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/app_state.dart';
 import '../routes.dart';
 import '../theme.dart';
 import '../utils/validators.dart';
@@ -7,8 +8,8 @@ import '../widgets/auth_widgets.dart';
 
 /// Screen 01 — Sign In.
 ///
-/// UI only for now: any correctly formatted email + password signs in.
-/// Checking against a saved account comes in the data-storage stage.
+/// Checks the email and password against the accounts saved on this phone.
+/// "Remember me" keeps the caregiver signed in after the app is closed.
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
 
@@ -20,8 +21,9 @@ class _SignInScreenState extends State<SignInScreen> {
   final _formKey = GlobalKey<FormState>();
   final _email = TextEditingController();
   final _password = TextEditingController();
-  bool _rememberMe = false; // not saved yet; wired up with storage later
+  bool _rememberMe = false;
   bool _submitting = false;
+  String? _error; // "Incorrect password" etc., shown above the button
 
   @override
   void dispose() {
@@ -34,13 +36,17 @@ class _SignInScreenState extends State<SignInScreen> {
     FocusScope.of(context).unfocus();
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    setState(() => _submitting = true);
-    // Short pause so the button shows it is working. Replace with the real
-    // account check later.
-    await Future<void>.delayed(const Duration(milliseconds: 600));
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+    final error = await AppState.signIn(_email.text, _password.text, remember: _rememberMe);
     if (!mounted) return;
-    setState(() => _submitting = false);
-    Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+    setState(() {
+      _submitting = false;
+      _error = error;
+    });
+    if (error == null) Navigator.of(context).pushReplacementNamed(AppRoutes.home);
   }
 
   Future<void> _openCreateAccount() async {
@@ -61,7 +67,10 @@ class _SignInScreenState extends State<SignInScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Reset password'),
-        content: const Text('Password reset will be available once accounts are connected.'),
+        content: const Text(
+          'Accounts are saved only on this phone, so there is no email reset yet. '
+          'If you forgot your password, create a new account with a different email.',
+        ),
         actions: [
           TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('OK')),
         ],
@@ -146,6 +155,10 @@ class _SignInScreenState extends State<SignInScreen> {
                           ],
                         ),
                         const SizedBox(height: 16),
+                        if (_error != null) ...[
+                          _ErrorBox(_error!),
+                          const SizedBox(height: 12),
+                        ],
                         FilledButton(
                           onPressed: _submitting ? null : _signIn,
                           child: _submitting
@@ -172,6 +185,32 @@ class _SignInScreenState extends State<SignInScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Red message box for sign-in errors ("Incorrect password").
+class _ErrorBox extends StatelessWidget {
+  final String message;
+  const _ErrorBox(this.message);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.danger.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.danger.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.error_outline, color: AppColors.danger, size: 20),
+          const SizedBox(width: 8),
+          Expanded(child: Text(message, style: const TextStyle(color: AppColors.danger, fontSize: 13.5))),
+        ],
       ),
     );
   }

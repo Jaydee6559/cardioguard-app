@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/app_state.dart';
 import '../data/mock_data.dart';
+import '../models/account.dart';
 import '../models/emergency_contact.dart';
 import '../routes.dart';
 import '../theme.dart';
@@ -11,8 +12,8 @@ import '../widgets/settings_rows.dart';
 
 /// Screen 05 — Profile & Settings (Settings tab).
 ///
-/// UI only: profile and wearer details come from [MockData]; the alert
-/// switches and contacts are kept in memory until storage is added.
+/// The profile shows the signed-in account. Alert switches and contacts are
+/// saved on the phone. Wearer details are still sample data.
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -21,14 +22,16 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _fallAlerts = true;
-  bool _heartRateAlerts = true;
-  bool _disconnectAlerts = false;
+  // Loaded from the phone; every change is saved straight away.
+  bool _fallAlerts = AppState.fallAlerts;
+  bool _heartRateAlerts = AppState.heartRateAlerts;
+  bool _disconnectAlerts = AppState.disconnectAlerts;
 
   /// Turning off fall alerts is risky, so ask first.
   Future<void> _setFallAlerts(bool on) async {
     if (on) {
       setState(() => _fallAlerts = true);
+      await AppState.setFallAlerts(true);
       return;
     }
     final confirmed = await showDialog<bool>(
@@ -49,7 +52,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
-    if (confirmed == true && mounted) setState(() => _fallAlerts = false);
+    if (confirmed == true && mounted) {
+      setState(() => _fallAlerts = false);
+      await AppState.setFallAlerts(false);
+    }
   }
 
   Future<void> _signOut() async {
@@ -69,8 +75,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
     if (confirmed == true && mounted) {
-      AppState.reset();
-      Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.signIn, (_) => false);
+      final navigator = Navigator.of(context);
+      await AppState.signOut();
+      navigator.pushNamedAndRemoveUntil(AppRoutes.signIn, (_) => false);
     }
   }
 
@@ -83,35 +90,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const ScreenHeader(kicker: 'Account', title: 'Profile & Settings'),
           const SizedBox(height: 18),
 
-          // Caregiver profile
-          const SectionCard(
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: AppColors.infoBg,
-                  child: Text(
-                    'MS',
-                    style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 18),
-                  ),
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        MockData.caregiverName,
-                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                      ),
-                      SizedBox(height: 2),
-                      Text(MockData.caregiverEmail, style: TextStyle(color: AppColors.textMuted, fontSize: 13.5)),
-                      Text(MockData.caregiverRole, style: TextStyle(color: AppColors.textFaint, fontSize: 13)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          // Caregiver profile (the signed-in account)
+          ValueListenableBuilder<Account?>(
+            valueListenable: AppState.account,
+            builder: (context, account, _) => _ProfileCard(account),
           ),
           const SizedBox(height: 14),
 
@@ -141,13 +123,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SwitchRow(
                   label: 'Abnormal heart rate',
                   value: _heartRateAlerts,
-                  onChanged: (v) => setState(() => _heartRateAlerts = v),
+                  onChanged: (v) {
+                    setState(() => _heartRateAlerts = v);
+                    AppState.setHeartRateAlerts(v);
+                  },
                 ),
                 SwitchRow(
                   label: 'Device disconnect',
                   subtitle: 'Notify me when the wearable loses Bluetooth',
                   value: _disconnectAlerts,
-                  onChanged: (v) => setState(() => _disconnectAlerts = v),
+                  onChanged: (v) {
+                    setState(() => _disconnectAlerts = v);
+                    AppState.setDisconnectAlerts(v);
+                  },
                 ),
               ],
             ),
@@ -222,6 +210,49 @@ class _ConnectedText extends StatelessWidget {
           style: TextStyle(color: AppColors.success, fontSize: 13.5, fontWeight: FontWeight.w600),
         ),
       ],
+    );
+  }
+}
+
+/// Avatar with initials, name, email and relationship.
+class _ProfileCard extends StatelessWidget {
+  final Account? account;
+  const _ProfileCard(this.account);
+
+  @override
+  Widget build(BuildContext context) {
+    final name = account?.name ?? MockData.caregiverName;
+    final email = account?.email ?? MockData.caregiverEmail;
+    final relationship = account?.relationship ?? '';
+    final role = relationship.isEmpty ? 'Caregiver' : '$relationship · Caregiver';
+    return SectionCard(
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundColor: AppColors.infoBg,
+            child: Text(
+              account?.initials ?? 'MS',
+              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 18),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                ),
+                const SizedBox(height: 2),
+                Text(email, style: const TextStyle(color: AppColors.textMuted, fontSize: 13.5)),
+                Text(role, style: const TextStyle(color: AppColors.textFaint, fontSize: 13)),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

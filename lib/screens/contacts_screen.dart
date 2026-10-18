@@ -10,8 +10,8 @@ import '../widgets/settings_rows.dart';
 
 /// Screen 06 — Emergency Contacts (opened from Settings).
 ///
-/// Add, edit, delete and choose the primary contact. Kept in memory
-/// ([AppState.contacts]) until storage is added.
+/// Add, edit, delete and choose the primary contact. Saved on the phone
+/// through [AppState].
 class ContactsScreen extends StatelessWidget {
   const ContactsScreen({super.key});
 
@@ -24,7 +24,7 @@ class ContactsScreen extends StatelessWidget {
       builder: (_) => ContactForm(existing: existing, forcePrimary: isFirst),
     );
     if (result == null) return;
-    AppState.saveContact(result, index: index);
+    await AppState.saveContact(result, index: index);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(existing == null ? '${result.name} added.' : '${result.name} updated.')),
@@ -52,7 +52,7 @@ class ContactsScreen extends StatelessWidget {
         ],
       ),
     );
-    if (confirmed == true) AppState.deleteContact(index);
+    if (confirmed == true) await AppState.deleteContact(index);
   }
 
   Future<void> _call(BuildContext context, EmergencyContact c) async {

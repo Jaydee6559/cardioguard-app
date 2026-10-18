@@ -20,4 +20,18 @@ class EmergencyContact {
       primary: primary ?? this.primary,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'relationship': relationship,
+        'phone': phone,
+        'primary': primary,
+      };
+
+  static EmergencyContact fromJson(Map<String, dynamic> j) => EmergencyContact(
+        name: j['name'] as String? ?? '',
+        relationship: j['relationship'] as String? ?? '',
+        phone: j['phone'] as String? ?? '',
+        primary: j['primary'] as bool? ?? false,
+      );
 }
