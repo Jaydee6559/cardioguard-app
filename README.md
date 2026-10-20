@@ -1,17 +1,51 @@
-# cardioguard
+# CardioGuard
 
-A new Flutter project.
+CardioGuard connects to an Arduino wearable over Bluetooth Low Energy (BLE). The Android and iOS Device & Sensors screen scans for devices, displays their advertised name (or **Unnamed BLE device**) and identifier, and connects to the HM-10 GATT notification service. Device names are not used to identify the Arduino.
 
-## Getting Started
+## Arduino BLE profile
 
-This project is a starting point for a Flutter application.
+- BLE service: `0000FFE0-0000-1000-8000-00805F9B34FB`
+- Notification/indication characteristic: `0000FFE1-0000-1000-8000-00805F9B34FB`
+- The characteristic must support notifications or indications.
+- Send UTF-8 text lines terminated by LF or CRLF. The app subscribes to updates and does not read the characteristic.
 
-A few resources to get you started if this is your first Flutter project:
+Supported lines:
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```text
+HR:78
+HR:NA
+G:1.02
+STATE:NORMAL
+STATE:FALL_PENDING
+STATE:EMERGENCY
+EVENT:SYSTEM_READY
+EVENT:SOS
+EVENT:POSSIBLE_FALL
+EVENT:FALL_CANCELLED
+EVENT:FALL_EMERGENCY
+EVENT:EMERGENCY_CLEARED
+EVENT:USER_OK
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+The Arduino remains authoritative for fall and emergency state. A possible-fall report is shown as a warning; CardioGuard raises an emergency notification only for an Arduino SOS, `EVENT:FALL_EMERGENCY`, or `STATE:EMERGENCY`. The app does not infer falls from acceleration or create SpO₂, GPS, battery, or historical sensor readings. Readings remain visible with their receive time and become stale after disconnect or when no fresh data arrives.
+
+Only one central connection may be accepted by some HM-10-compatible modules. Disconnect nRF Connect and other BLE clients before connecting CardioGuard. If the profile is not found, the app displays the discovered UUIDs and characteristic properties.
+
+## Platform permissions
+
+- **Android 12+ (API 31+)**: allow Nearby devices (Bluetooth scan and connect) when prompted.
+- **Android 11 and older**: allow Location while using the app and enable the device's Location service while scanning, as required by Android's BLE scanning rules.
+- **iOS**: allow Bluetooth access. The usage descriptions are in `ios/Runner/Info.plist`.
+
+The iOS project is included, but building/running it requires macOS and Xcode; it cannot be built on Windows.
+
+## Development and tests
+
+```sh
+flutter pub get
+flutter analyze
+flutter test
+flutter run -d <android-device-id>
+```
+
+The protocol parser and BLE lifecycle have focused unit tests using a fake transport. Validate actual radio discovery, notification delivery, permissions, and HM-10 firmware behavior with the target hardware.

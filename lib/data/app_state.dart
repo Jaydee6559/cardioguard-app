@@ -49,7 +49,8 @@ class AppState {
   static bool get isSignedIn => account.value != null;
 
   /// Loads everything saved on the phone. The first time the app runs, the
-  /// sample contacts and events are saved so the screens aren't empty.
+  /// sample contacts are saved so the screens aren't empty. Event history
+  /// starts empty and is populated only by events received from the app/device.
   static Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
 
@@ -65,14 +66,16 @@ class AppState {
     // Events
     final savedEvents = _prefs.getString(_kEvents);
     if (savedEvents == null) {
-      events.value = List.of(MockData.events);
+      events.value = [];
       await _saveEvents();
     } else {
       events.value = _decodeList(savedEvents, AlertEvent.fromJson);
     }
 
     // Appearance
-    themeMode.value = ThemeMode.values.asNameMap()[_prefs.getString(_kThemeMode)] ?? ThemeMode.system;
+    themeMode.value =
+        ThemeMode.values.asNameMap()[_prefs.getString(_kThemeMode)] ??
+        ThemeMode.system;
 
     // Remember me: sign straight back in
     final remembered = _prefs.getString(_kRemembered);
@@ -106,7 +109,8 @@ class AppState {
   }
 
   /// Passwords are never saved as typed: only a salted SHA-256 hash.
-  static String _hash(String password, String salt) => sha256.convert(utf8.encode('$salt:$password')).toString();
+  static String _hash(String password, String salt) =>
+      sha256.convert(utf8.encode('$salt:$password')).toString();
 
   static String _newSalt() {
     final r = Random.secure();
@@ -135,10 +139,16 @@ class AppState {
 
   /// Checks the email and password. Returns an error message, or null when
   /// signed in. With [remember], the account stays signed in after restart.
-  static Future<String?> signIn(String email, String password, {required bool remember}) async {
+  static Future<String?> signIn(
+    String email,
+    String password, {
+    required bool remember,
+  }) async {
     final a = _accounts()[_key(email)];
-    if (a is! Map<String, dynamic>) return 'No account found for this email. Tap "Create one" to register.';
-    if (_hash(password, a['salt'] as String? ?? '') != a['hash']) return 'Incorrect password. Please try again.';
+    if (a is! Map<String, dynamic>)
+      return 'No account found for this email. Tap "Create one" to register.';
+    if (_hash(password, a['salt'] as String? ?? '') != a['hash'])
+      return 'Incorrect password. Please try again.';
 
     account.value = _accountFor(email);
     if (remember) {
@@ -158,11 +168,14 @@ class AppState {
 
   static bool get fallAlerts => _prefs.getBool(_kFallAlerts) ?? true;
   static bool get heartRateAlerts => _prefs.getBool(_kHeartAlerts) ?? true;
-  static bool get disconnectAlerts => _prefs.getBool(_kDisconnectAlerts) ?? false;
+  static bool get disconnectAlerts =>
+      _prefs.getBool(_kDisconnectAlerts) ?? false;
 
   static Future<void> setFallAlerts(bool v) => _prefs.setBool(_kFallAlerts, v);
-  static Future<void> setHeartRateAlerts(bool v) => _prefs.setBool(_kHeartAlerts, v);
-  static Future<void> setDisconnectAlerts(bool v) => _prefs.setBool(_kDisconnectAlerts, v);
+  static Future<void> setHeartRateAlerts(bool v) =>
+      _prefs.setBool(_kHeartAlerts, v);
+  static Future<void> setDisconnectAlerts(bool v) =>
+      _prefs.setBool(_kDisconnectAlerts, v);
 
   // ============================================================ Appearance
 
@@ -181,7 +194,10 @@ class AppState {
 
   /// Adds a contact, or replaces the one at [index]. Marking one as primary
   /// clears primary from the others. The first contact is always primary.
-  static Future<void> saveContact(EmergencyContact contact, {int? index}) async {
+  static Future<void> saveContact(
+    EmergencyContact contact, {
+    int? index,
+  }) async {
     final list = List.of(contacts.value);
     if (index == null) {
       list.add(contact);
@@ -190,7 +206,8 @@ class AppState {
     }
     if (contact.primary) {
       for (var i = 0; i < list.length; i++) {
-        if (!identical(list[i], contact) && list[i].primary) list[i] = list[i].copyWith(primary: false);
+        if (!identical(list[i], contact) && list[i].primary)
+          list[i] = list[i].copyWith(primary: false);
       }
     }
     contacts.value = _ensurePrimary(list);
@@ -210,15 +227,26 @@ class AppState {
     return list;
   }
 
-  static Future<void> _saveContacts() =>
-      _prefs.setString(_kContacts, jsonEncode(contacts.value.map((c) => c.toJson()).toList()));
+  static Future<void> _saveContacts() => _prefs.setString(
+    _kContacts,
+    jsonEncode(contacts.value.map((c) => c.toJson()).toList()),
+  );
 
   // ============================================================= Event log
 
   /// Adds an event to the top of Alerts & Events, stamped with the current time.
-  static Future<void> logEvent(String title, String description, Severity severity) async {
+  static Future<void> logEvent(
+    String title,
+    String description,
+    Severity severity,
+  ) async {
     final list = [
-      AlertEvent(title: title, description: description, severity: severity, time: DateTime.now()),
+      AlertEvent(
+        title: title,
+        description: description,
+        severity: severity,
+        time: DateTime.now(),
+      ),
       ...events.value,
     ];
     events.value = list.length > maxEvents ? list.sublist(0, maxEvents) : list;
@@ -230,14 +258,22 @@ class AppState {
     await _saveEvents();
   }
 
-  static Future<void> _saveEvents() =>
-      _prefs.setString(_kEvents, jsonEncode(events.value.map((e) => e.toJson()).toList()));
+  static Future<void> _saveEvents() => _prefs.setString(
+    _kEvents,
+    jsonEncode(events.value.map((e) => e.toJson()).toList()),
+  );
 
   // ================================================================ helpers
 
-  static List<T> _decodeList<T>(String raw, T Function(Map<String, dynamic>) fromJson) {
+  static List<T> _decodeList<T>(
+    String raw,
+    T Function(Map<String, dynamic>) fromJson,
+  ) {
     try {
-      return (jsonDecode(raw) as List).whereType<Map<String, dynamic>>().map(fromJson).toList();
+      return (jsonDecode(raw) as List)
+          .whereType<Map<String, dynamic>>()
+          .map(fromJson)
+          .toList();
     } catch (_) {
       return []; // corrupted data: start empty rather than crash
     }

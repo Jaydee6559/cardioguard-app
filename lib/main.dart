@@ -7,10 +7,9 @@ import 'screens/contacts_screen.dart';
 import 'screens/create_account_screen.dart';
 import 'screens/device_screen.dart';
 import 'screens/emergency_alert_screen.dart';
-import 'screens/fall_detected_screen.dart';
 import 'screens/home_shell.dart';
-import 'screens/no_response_screen.dart';
 import 'screens/sign_in_screen.dart';
+import 'services/ble_service.dart';
 import 'services/notification_service.dart';
 import 'theme.dart';
 
@@ -18,6 +17,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppState.init(); // load saved accounts, contacts, settings and events
   await NotificationService.init(); // emergency notifications
+  await BleService.instance.initialize();
   runApp(const CardioGuardApp());
 }
 
@@ -39,7 +39,9 @@ class CardioGuardApp extends StatelessWidget {
         builder: (context, child) {
           final dark = Theme.of(context).brightness == Brightness.dark;
           return AnnotatedRegion<SystemUiOverlayStyle>(
-            value: dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+            value: dark
+                ? SystemUiOverlayStyle.light
+                : SystemUiOverlayStyle.dark,
             child: child ?? const SizedBox.shrink(),
           );
         },
@@ -62,8 +64,6 @@ class CardioGuardApp extends StatelessWidget {
           AppRoutes.home: (_) => const HomeShell(),
           AppRoutes.contacts: (_) => const ContactsScreen(),
           AppRoutes.device: (_) => const DeviceScreen(),
-          AppRoutes.fallDetected: (_) => const FallDetectedScreen(),
-          AppRoutes.noResponse: (_) => const NoResponseScreen(),
           AppRoutes.emergencyAlert: (_) => const EmergencyAlertScreen(),
         },
       ),

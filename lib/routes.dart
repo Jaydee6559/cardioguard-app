@@ -8,8 +8,6 @@ class AppRoutes {
   static const contacts = '/contacts';
   static const device = '/device';
 
-  // Emergency flow (screens 08–10)
-  static const fallDetected = '/fall-detected';
-  static const noResponse = '/no-response';
+  // Explicit caregiver-raised emergency flow
   static const emergencyAlert = '/emergency-alert';
 }

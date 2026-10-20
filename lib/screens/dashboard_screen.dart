@@ -4,6 +4,8 @@ import '../data/app_state.dart';
 import '../data/mock_data.dart';
 import '../models/alert_event.dart';
 import '../routes.dart';
+import '../services/arduino_protocol.dart';
+import '../services/ble_service.dart';
 import '../theme.dart';
 import '../utils/formatters.dart';
 import '../widgets/screen_header.dart';
@@ -14,14 +16,9 @@ import 'emergency_alert_screen.dart';
 
 /// Screen 02 — Monitoring Dashboard (Home tab).
 ///
-/// UI only: readings come from [MockData]. Simulate Fall and Send SOS open
-/// the emergency screens so the whole flow can be demonstrated.
+/// Sensor values and emergency state come from the shared Arduino BLE service.
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
-
-  void _simulateFall(BuildContext context) {
-    Navigator.of(context).pushNamed(AppRoutes.fallDetected);
-  }
 
   Future<void> _sendSos(BuildContext context) async {
     final confirmed = await showDialog<bool>(
@@ -29,9 +26,14 @@ class DashboardScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         icon: Icon(Icons.sos, color: AppColors.emergency, size: 32),
         title: const Text('Send SOS?'),
-        content: const Text('This raises an emergency alert and notifies your emergency contacts.'),
+        content: const Text(
+          'This raises an emergency alert and notifies your emergency contacts.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.emergency,
@@ -44,103 +46,105 @@ class DashboardScreen extends StatelessWidget {
       ),
     );
     if (confirmed == true && context.mounted) {
-      AppState.logEvent('Manual SOS', 'SOS sent from the dashboard.', Severity.emergency);
-      Navigator.of(context).pushNamed(AppRoutes.emergencyAlert, arguments: EmergencyAlertArgs.sos);
+      AppState.logEvent(
+        'Caregiver SOS',
+        'A caregiver raised an alert from CardioGuard.',
+        Severity.emergency,
+      );
+      Navigator.of(context).pushNamed(
+        AppRoutes.emergencyAlert,
+        arguments: EmergencyAlertArgs.caregiverSOS,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     AppColors.watch(context);
-    return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-        children: [
-          ScreenHeader(
-            kicker: 'Monitoring',
-            title: MockData.wearerName,
-            trailing: MockData.deviceConnected
-                ? StatusPill(text: 'Connected', color: AppColors.success)
-                : StatusPill(text: 'Disconnected', color: AppColors.textMuted),
-          ),
-          const SizedBox(height: 18),
-          const _OverallStatusCard(),
-          const SizedBox(height: 14),
-          _TileRow(
-            left: VitalCard(
-              label: 'Heart Rate',
-              icon: Icons.favorite,
-              iconColor: AppColors.emergency,
-              iconTile: true,
-              value: '${MockData.heartRate}',
-              unit: 'BPM',
-              status: 'Normal',
-              statusColor: AppColors.success,
-            ),
-            right: VitalCard(
-              label: 'SpO₂',
-              icon: Icons.water_drop,
-              iconColor: AppColors.primary,
-              iconTile: true,
-              value: '${MockData.spo2}',
-              unit: '%',
-              status: 'Normal',
-              statusColor: AppColors.success,
-            ),
-          ),
-          const SizedBox(height: 14),
-          _TileRow(
-            left: VitalCard(
-              label: 'Movement',
-              icon: Icons.monitor_heart_outlined,
-              iconColor: AppColors.textMuted,
-              value: MockData.movement,
-              status: MockData.movementDetail,
-            ),
-            right: VitalCard(
-              label: 'Battery',
-              icon: Icons.battery_5_bar_outlined,
-              iconColor: AppColors.textMuted,
-              value: '${MockData.battery}%',
-              progress: MockData.battery / 100,
-            ),
-          ),
-          const SizedBox(height: 14),
-          SectionCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CardLabel('Emergency', color: AppColors.emergency),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => _simulateFall(context),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.emergency,
-                          side: BorderSide(color: AppColors.emergency.withValues(alpha: 0.3)),
-                          minimumSize: const Size.fromHeight(50),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                        ),
-                        child: const Text('Simulate Fall'),
-                      ),
+    final ble = BleService.instance;
+    return AnimatedBuilder(
+      animation: ble,
+      builder: (context, _) => SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          children: [
+            ScreenHeader(
+              kicker: 'Monitoring',
+              title: MockData.wearerName,
+              trailing: ble.isConnected
+                  ? StatusPill(text: 'Connected', color: AppColors.success)
+                  : StatusPill(
+                      text: switch (ble.connectionStatus) {
+                        BleConnectionStatus.scanning => 'Scanning',
+                        BleConnectionStatus.connecting => 'Connecting',
+                        _ => 'Disconnected',
+                      },
+                      color: AppColors.textMuted,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: FilledButton(
-                        onPressed: () => _sendSos(context),
-                        style: FilledButton.styleFrom(backgroundColor: AppColors.emergency),
-                        child: const Text('Send SOS'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
             ),
-          ),
-        ],
+            const SizedBox(height: 18),
+            _OverallStatusCard(ble),
+            const SizedBox(height: 14),
+            _TileRow(
+              left: VitalCard(
+                label: 'Heart Rate',
+                icon: Icons.favorite,
+                iconColor: AppColors.emergency,
+                iconTile: true,
+                value: ble.heartRate?.toString() ?? '—',
+                unit: 'BPM',
+                status: ble.heartRate == null
+                    ? 'Unavailable'
+                    : ble.isReadingStale(ble.heartRateReceivedAt)
+                    ? 'Stale'
+                    : 'Live',
+                statusColor: ble.heartRate == null
+                    ? AppColors.textMuted
+                    : ble.isReadingStale(ble.heartRateReceivedAt)
+                    ? AppColors.warning
+                    : AppColors.success,
+              ),
+              right: VitalCard(
+                label: 'Acceleration',
+                icon: Icons.speed,
+                iconColor: AppColors.textMuted,
+                iconTile: true,
+                value: ble.accelerationG?.toStringAsFixed(2) ?? '—',
+                unit: 'g',
+                status: ble.accelerationG == null
+                    ? 'Unavailable'
+                    : ble.isReadingStale(ble.accelerationReceivedAt)
+                    ? 'Stale'
+                    : 'Live',
+                statusColor: ble.accelerationG == null
+                    ? AppColors.textMuted
+                    : ble.isReadingStale(ble.accelerationReceivedAt)
+                    ? AppColors.warning
+                    : AppColors.success,
+              ),
+            ),
+            const SizedBox(height: 14),
+            SectionCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CardLabel('Caregiver alert', color: AppColors.emergency),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () => _sendSos(context),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.emergency,
+                      ),
+                      child: const Text('Send caregiver SOS'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -148,7 +152,9 @@ class DashboardScreen extends StatelessWidget {
 
 /// "OVERALL STATUS / Normal / Last updated" card with the green shield.
 class _OverallStatusCard extends StatelessWidget {
-  const _OverallStatusCard();
+  const _OverallStatusCard(this.ble);
+
+  final BleService ble;
 
   @override
   Widget build(BuildContext context) {
@@ -163,12 +169,18 @@ class _OverallStatusCard extends StatelessWidget {
                 const CardLabel('Overall status'),
                 const SizedBox(height: 6),
                 Text(
-                  'Normal',
-                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700, color: AppColors.success),
+                  _stateLabel,
+                  style: TextStyle(
+                    fontSize: 25,
+                    fontWeight: FontWeight.w700,
+                    color: _stateColor,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Last updated: ${Formatters.clock(DateTime.now())} today',
+                  ble.stateReceivedAt == null
+                      ? 'No Arduino state received'
+                      : 'Last reported: ${Formatters.clock(ble.stateReceivedAt!)}',
                   style: TextStyle(color: AppColors.textFaint, fontSize: 13.5),
                 ),
               ],
@@ -177,13 +189,39 @@ class _OverallStatusCard extends StatelessWidget {
           Container(
             width: 56,
             height: 56,
-            decoration: BoxDecoration(color: AppColors.successBg, shape: BoxShape.circle),
-            child: Icon(Icons.verified_user_outlined, color: AppColors.success, size: 28),
+            decoration: BoxDecoration(
+              color: _stateColor.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.verified_user_outlined,
+              color: _stateColor,
+              size: 28,
+            ),
           ),
         ],
       ),
     );
   }
+
+  String get _stateLabel {
+    final prefix = ble.isReadingStale(ble.stateReceivedAt)
+        ? 'Last known: '
+        : '';
+    return switch (ble.wearableState) {
+      WearableState.normal => '${prefix}Normal',
+      WearableState.fallPending => '${prefix}Possible fall',
+      WearableState.emergency => '${prefix}Emergency',
+      null => ble.isConnected ? 'Awaiting device' : 'Unavailable',
+    };
+  }
+
+  Color get _stateColor => switch (ble.wearableState) {
+    WearableState.normal => AppColors.success,
+    WearableState.fallPending => AppColors.warning,
+    WearableState.emergency => AppColors.emergency,
+    null => AppColors.textMuted,
+  };
 }
 
 /// Two tiles side by side with equal height.

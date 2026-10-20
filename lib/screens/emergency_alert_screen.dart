@@ -7,6 +7,7 @@ import '../models/alert_event.dart';
 import '../models/emergency_contact.dart';
 import '../routes.dart';
 import '../services/alarm_service.dart';
+import '../services/ble_service.dart';
 import '../services/contact_actions.dart';
 import '../services/notification_service.dart';
 import '../theme.dart';
@@ -19,21 +20,13 @@ class EmergencyAlertArgs {
   final String detail;
   const EmergencyAlertArgs(this.title, this.detail);
 
-  static const noResponse = EmergencyAlertArgs(
-    'Possible fall detected',
-    'No response received within 15 seconds. Immediate attention may be required.',
-  );
-  static const helpRequested = EmergencyAlertArgs(
-    'Help requested after a fall',
-    'The wearer tapped NEED HELP during the fall check.',
-  );
-  static const caregiverRaised = EmergencyAlertArgs(
-    'Possible fall detected',
-    'The caregiver raised the alert during the fall check. Immediate attention may be required.',
-  );
   static const sos = EmergencyAlertArgs(
     'SOS button pressed',
     'The wearer asked for help. Immediate attention may be required.',
+  );
+  static const caregiverSOS = EmergencyAlertArgs(
+    'Caregiver SOS sent',
+    'The caregiver raised an emergency alert in CardioGuard.',
   );
 }
 
@@ -68,13 +61,16 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
 
   EmergencyAlertArgs get _args {
     final a = ModalRoute.of(context)?.settings.arguments;
-    return a is EmergencyAlertArgs ? a : EmergencyAlertArgs.noResponse;
+    return a is EmergencyAlertArgs ? a : EmergencyAlertArgs.caregiverSOS;
   }
 
   // Primary contact from the Contacts screen (falls back to sample data).
-  String get _contactName => AppState.primaryContact?.name ?? MockData.contactName;
-  String get _contactRelationship => AppState.primaryContact?.relationship ?? MockData.contactRelationship;
-  String get _contactPhone => AppState.primaryContact?.phone ?? MockData.contactPhone;
+  String get _contactName =>
+      AppState.primaryContact?.name ?? MockData.contactName;
+  String get _contactRelationship =>
+      AppState.primaryContact?.relationship ?? MockData.contactRelationship;
+  String get _contactPhone =>
+      AppState.primaryContact?.phone ?? MockData.contactPhone;
 
   /// Pre-written text for SMS messages to contacts.
   String get _smsMessage =>
@@ -90,7 +86,9 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
     final ok = await action(primary);
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't open the phone app on this device.")),
+        const SnackBar(
+          content: Text("Couldn't open the phone app on this device."),
+        ),
       );
     }
   }
@@ -111,14 +109,27 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
   void _acknowledge() {
     AlarmService.stop();
     NotificationService.clear();
-    AppState.logEvent('Alert Acknowledged', 'Caregiver acknowledged: ${_args.title.toLowerCase()}.', Severity.info);
+    AppState.logEvent(
+      'Alert Acknowledged',
+      'Caregiver acknowledged: ${_args.title.toLowerCase()}.',
+      Severity.info,
+    );
     final messenger = ScaffoldMessenger.of(context);
     // Back to the dashboard (it is the first page when "Remember me" opened it).
-    Navigator.of(context).popUntil((r) => r.settings.name == AppRoutes.home || r.isFirst);
-    messenger.showSnackBar(const SnackBar(content: Text('Alert acknowledged.')));
+    Navigator.of(context)
+        .popUntil((r) => r.settings.name == AppRoutes.home || r.isFirst);
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Alert acknowledged.')),
+    );
   }
 
   void _viewDetails() {
+    final ble = BleService.instance;
+    final readings = <String>[
+      if (ble.heartRate != null) 'Heart rate: ${ble.heartRate} BPM',
+      if (ble.accelerationG != null)
+        'Acceleration: ${ble.accelerationG!.toStringAsFixed(2)} g',
+    ];
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -129,17 +140,28 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Event details', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+              const Text(
+                'Event details',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+              ),
               const SizedBox(height: 16),
               _DetailRow('Event', _args.title),
               _DetailRow('What happened', _args.detail),
               _DetailRow('Time', Formatters.alertStamp(_raisedAt)),
-              const _DetailRow('Wearer', '${MockData.wearerName}, age ${MockData.wearerAge}'),
               const _DetailRow(
-                'Readings',
-                '${MockData.alertHeartRate} BPM · SpO₂ ${MockData.alertSpo2}% · ${MockData.alertMovement} movement',
+                'Wearer',
+                '${MockData.wearerName}, age ${MockData.wearerAge}',
               ),
-              _DetailRow('Primary contact', '$_contactName ($_contactRelationship)'),
+              _DetailRow(
+                'Arduino readings',
+                readings.isEmpty
+                    ? 'No readings available.'
+                    : readings.join(' · '),
+              ),
+              _DetailRow(
+                'Primary contact',
+                '$_contactName ($_contactRelationship)',
+              ),
             ],
           ),
         ),
@@ -150,6 +172,7 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
   @override
   Widget build(BuildContext context) {
     AppColors.watch(context);
+    final ble = BleService.instance;
     final args = _args;
     return PopScope(
       canPop: false,
@@ -173,7 +196,11 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
                               color: Colors.white.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(14),
                             ),
-                            child: const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 28),
+                            child: const Icon(
+                              Icons.warning_amber_rounded,
+                              color: Colors.white,
+                              size: 28,
+                            ),
                           ),
                           const SizedBox(width: 14),
                           Expanded(
@@ -182,20 +209,32 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
                               children: [
                                 Text(
                                   Formatters.alertStamp(_raisedAt),
-                                  style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13, letterSpacing: 0.8),
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.8),
+                                    fontSize: 13,
+                                    letterSpacing: 0.8,
+                                  ),
                                 ),
                                 const Text(
                                   'Emergency Alert',
-                                  style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w700),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
                           IconButton(
-                            tooltip: _muted ? 'Turn alarm sound on' : 'Mute alarm sound',
+                            tooltip: _muted
+                                ? 'Turn alarm sound on'
+                                : 'Mute alarm sound',
                             onPressed: _toggleMute,
                             icon: Icon(
-                              _muted ? Icons.volume_off_outlined : Icons.volume_up_outlined,
+                              _muted
+                                  ? Icons.volume_off_outlined
+                                  : Icons.volume_up_outlined,
                               color: Colors.white,
                             ),
                           ),
@@ -206,11 +245,22 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(args.title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+                            Text(
+                              args.title,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                             const SizedBox(height: 4),
                             Text(
                               args.detail,
-                              style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 14.5, height: 1.4),
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.9),
+                                fontSize: 14.5,
+                                height: 1.4,
+                              ),
                             ),
                           ],
                         ),
@@ -218,23 +268,41 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
                       const SizedBox(height: 12),
                       const _RedCard(
                         label: 'Wearer',
-                        child: _NameLine(MockData.wearerName, 'Patient · Age ${MockData.wearerAge}'),
+                        child: _NameLine(
+                          MockData.wearerName,
+                          'Patient · Age ${MockData.wearerAge}',
+                        ),
                       ),
                       const SizedBox(height: 12),
-                      const _RedCard(
-                        label: 'Current readings',
+                      _RedCard(
+                        label: 'Arduino readings',
                         child: Row(
                           children: [
-                            Expanded(child: _Reading('${MockData.alertHeartRate}', 'BPM', 'Heart Rate')),
-                            Expanded(child: _Reading('${MockData.alertSpo2}', '%', 'SpO₂')),
-                            Expanded(child: _Reading('—', MockData.alertMovement, 'Movement')),
+                            Expanded(
+                              child: _Reading(
+                                ble.heartRate?.toString() ?? 'Unavailable',
+                                ble.heartRate == null ? '' : 'BPM',
+                                'Heart Rate',
+                              ),
+                            ),
+                            Expanded(
+                              child: _Reading(
+                                ble.accelerationG?.toStringAsFixed(2) ??
+                                    'Unavailable',
+                                ble.accelerationG == null ? '' : 'g',
+                                'Acceleration',
+                              ),
+                            ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 12),
                       _RedCard(
                         label: 'Primary contact',
-                        child: _NameLine('$_contactName · $_contactRelationship', _contactPhone),
+                        child: _NameLine(
+                          '$_contactName · $_contactRelationship',
+                          _contactPhone,
+                        ),
                       ),
                     ],
                   ),
@@ -259,7 +327,9 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
                           Expanded(
                             child: _OutlineWhiteButton(
                               icon: Icons.sms_outlined,
-                              label: 'Text $_contactName'.length > 18 ? 'Send Text' : 'Text $_contactName',
+                              label: 'Text $_contactName'.length > 18
+                                  ? 'Send Text'
+                                  : 'Text $_contactName',
                               onPressed: _textPrimary,
                             ),
                           ),
@@ -276,7 +346,9 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
                       const SizedBox(height: 10),
                       FilledButton(
                         onPressed: _acknowledge,
-                        style: FilledButton.styleFrom(backgroundColor: Colors.white.withValues(alpha: 0.18)),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.18),
+                        ),
                         child: const Text('Acknowledge Alert'),
                       ),
                       const SizedBox(height: 4),
@@ -322,7 +394,11 @@ class _RedCard extends StatelessWidget {
           if (label != null) ...[
             Text(
               label!.toUpperCase(),
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12.5, letterSpacing: 1.1),
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.75),
+                fontSize: 12.5,
+                letterSpacing: 1.1,
+              ),
             ),
             const SizedBox(height: 10),
           ],
@@ -345,9 +421,22 @@ class _NameLine extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(name, style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700)),
+        Text(
+          name,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         const SizedBox(height: 4),
-        Text(sub, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14)),
+        Text(
+          sub,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.8),
+            fontSize: 14,
+          ),
+        ),
       ],
     );
   }
@@ -365,9 +454,28 @@ class _Reading extends StatelessWidget {
     AppColors.watch(context);
     return Column(
       children: [
-        Text(value, style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w700)),
-        Text(unit, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13)),
-        Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 13)),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 30,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        Text(
+          unit,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.8),
+            fontSize: 13,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.65),
+            fontSize: 13,
+          ),
+        ),
       ],
     );
   }
@@ -387,9 +495,15 @@ class _DetailRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+          Text(
+            label,
+            style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+          ),
           const SizedBox(height: 2),
-          Text(value, style: TextStyle(color: AppColors.textPrimary, fontSize: 15)),
+          Text(
+            value,
+            style: TextStyle(color: AppColors.textPrimary, fontSize: 15),
+          ),
         ],
       ),
     );
@@ -401,7 +515,11 @@ class _OutlineWhiteButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onPressed;
-  const _OutlineWhiteButton({required this.icon, required this.label, required this.onPressed});
+  const _OutlineWhiteButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
 
   @override
   Widget build(BuildContext context) {

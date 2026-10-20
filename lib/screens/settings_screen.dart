@@ -5,6 +5,7 @@ import '../data/mock_data.dart';
 import '../models/account.dart';
 import '../models/emergency_contact.dart';
 import '../routes.dart';
+import '../services/ble_service.dart';
 import '../theme.dart';
 import '../widgets/screen_header.dart';
 import '../widgets/section_card.dart';
@@ -37,13 +38,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        icon: Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 32),
+        icon: Icon(
+          Icons.warning_amber_rounded,
+          color: AppColors.warning,
+          size: 32,
+        ),
         title: const Text('Turn off fall alerts?'),
         content: const Text(
           "You won't be alerted if the device detects a fall. The wearer's device will still sound its buzzer.",
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Keep on')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Keep on'),
+          ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger),
@@ -63,9 +71,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Sign out?'),
-        content: const Text('You will stop receiving alerts on this phone until you sign in again.'),
+        content: const Text(
+          'You will stop receiving alerts on this phone until you sign in again.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger),
@@ -120,7 +133,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 const CardLabel('Alert preferences'),
                 const SizedBox(height: 6),
-                SwitchRow(label: 'Fall detection alerts', value: _fallAlerts, onChanged: _setFallAlerts),
+                SwitchRow(
+                  label: 'Fall detection alerts',
+                  value: _fallAlerts,
+                  onChanged: _setFallAlerts,
+                ),
                 SwitchRow(
                   label: 'Abnormal heart rate',
                   value: _heartRateAlerts,
@@ -156,9 +173,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     width: double.infinity,
                     child: SegmentedButton<ThemeMode>(
                       segments: const [
-                        ButtonSegment(value: ThemeMode.system, label: Text('System'), icon: Icon(Icons.phone_android)),
-                        ButtonSegment(value: ThemeMode.light, label: Text('Light'), icon: Icon(Icons.light_mode_outlined)),
-                        ButtonSegment(value: ThemeMode.dark, label: Text('Dark'), icon: Icon(Icons.dark_mode_outlined)),
+                        ButtonSegment(
+                          value: ThemeMode.system,
+                          label: Text('System'),
+                          icon: Icon(Icons.phone_android),
+                        ),
+                        ButtonSegment(
+                          value: ThemeMode.light,
+                          label: Text('Light'),
+                          icon: Icon(Icons.light_mode_outlined),
+                        ),
+                        ButtonSegment(
+                          value: ThemeMode.dark,
+                          label: Text('Dark'),
+                          icon: Icon(Icons.dark_mode_outlined),
+                        ),
                       ],
                       selected: {mode},
                       showSelectedIcon: false,
@@ -188,19 +217,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     label: 'Emergency contacts',
                     trailing: Text(
                       '${contacts.length} ${contacts.length == 1 ? 'contact' : 'contacts'}',
-                      style: TextStyle(color: AppColors.textMuted, fontSize: 13.5),
+                      style: TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 13.5,
+                      ),
                     ),
-                    onTap: () => Navigator.of(context).pushNamed(AppRoutes.contacts),
+                    onTap: () =>
+                        Navigator.of(context).pushNamed(AppRoutes.contacts),
                   ),
                 ),
                 Divider(height: 1, color: AppColors.cardBorder),
                 NavRow(
                   icon: Icons.watch_outlined,
                   label: 'Device & sensors',
-                  trailing: MockData.deviceConnected
-                      ? const _ConnectedText()
-                      : Text('Offline', style: TextStyle(color: AppColors.textMuted, fontSize: 13.5)),
-                  onTap: () => Navigator.of(context).pushNamed(AppRoutes.device),
+                  trailing: AnimatedBuilder(
+                    animation: BleService.instance,
+                    builder: (context, _) => Text(
+                      BleService.instance.isConnected ? 'Connected' : 'Offline',
+                      style: TextStyle(
+                        color: BleService.instance.isConnected
+                            ? AppColors.success
+                            : AppColors.textMuted,
+                        fontSize: 13.5,
+                      ),
+                    ),
+                  ),
+                  onTap: () =>
+                      Navigator.of(context).pushNamed(AppRoutes.device),
                 ),
               ],
             ),
@@ -213,38 +256,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               foregroundColor: AppColors.danger,
               side: BorderSide(color: AppColors.danger.withValues(alpha: 0.3)),
               minimumSize: const Size.fromHeight(50),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              textStyle: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             child: const Text('Sign Out'),
           ),
         ],
       ),
-    );
-  }
-}
-
-/// Green "● Connected" text for the Device & sensors row.
-class _ConnectedText extends StatelessWidget {
-  const _ConnectedText();
-
-  @override
-  Widget build(BuildContext context) {
-    AppColors.watch(context);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 7,
-          height: 7,
-          decoration: BoxDecoration(color: AppColors.success, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          'Connected',
-          style: TextStyle(color: AppColors.success, fontSize: 13.5, fontWeight: FontWeight.w600),
-        ),
-      ],
     );
   }
 }
@@ -260,7 +283,9 @@ class _ProfileCard extends StatelessWidget {
     final name = account?.name ?? MockData.caregiverName;
     final email = account?.email ?? MockData.caregiverEmail;
     final relationship = account?.relationship ?? '';
-    final role = relationship.isEmpty ? 'Caregiver' : '$relationship · Caregiver';
+    final role = relationship.isEmpty
+        ? 'Caregiver'
+        : '$relationship · Caregiver';
     return SectionCard(
       child: Row(
         children: [
@@ -269,7 +294,11 @@ class _ProfileCard extends StatelessWidget {
             backgroundColor: AppColors.infoBg,
             child: Text(
               account?.initials ?? 'MS',
-              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 18),
+              style: TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+              ),
             ),
           ),
           const SizedBox(width: 16),
@@ -279,11 +308,21 @@ class _ProfileCard extends StatelessWidget {
               children: [
                 Text(
                   name,
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: 2),
-                Text(email, style: TextStyle(color: AppColors.textMuted, fontSize: 13.5)),
-                Text(role, style: TextStyle(color: AppColors.textFaint, fontSize: 13)),
+                Text(
+                  email,
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 13.5),
+                ),
+                Text(
+                  role,
+                  style: TextStyle(color: AppColors.textFaint, fontSize: 13),
+                ),
               ],
             ),
           ),

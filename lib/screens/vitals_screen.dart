@@ -1,113 +1,152 @@
 import 'package:flutter/material.dart';
 
-import '../data/mock_data.dart';
+import '../services/ble_service.dart';
+import '../services/arduino_protocol.dart';
 import '../theme.dart';
 import '../utils/formatters.dart';
 import '../widgets/screen_header.dart';
-import '../widgets/vital_chart_card.dart';
+import '../widgets/section_card.dart';
 
-enum VitalsRange { daily, weekly }
-
-/// Screen 03 — Vital Signs History (Vitals tab).
-///
-/// Daily shows today's readings by hour; Weekly shows the last 7 days'
-/// averages. UI only: data comes from [MockData].
-class VitalsScreen extends StatefulWidget {
+class VitalsScreen extends StatelessWidget {
   const VitalsScreen({super.key});
-
-  @override
-  State<VitalsScreen> createState() => _VitalsScreenState();
-}
-
-class _VitalsScreenState extends State<VitalsScreen> {
-  VitalsRange _range = VitalsRange.daily;
-
-  bool get _daily => _range == VitalsRange.daily;
-
-  /// Axis label for a point: "14:00" (Daily) or "Mon" (Weekly).
-  String _xLabel(double x) {
-    if (_daily) return Formatters.hour(x);
-    final day = DateTime.now().subtract(Duration(days: 6 - x.round()));
-    return Formatters.weekday(day);
-  }
-
-  String _caption(String normalRange) {
-    final today = DateTime.now();
-    if (_daily) return '${Formatters.date(today)} — Normal range: $normalRange';
-    final start = today.subtract(const Duration(days: 6));
-    return '${Formatters.shortDate(start)} – ${Formatters.shortDate(today)} (daily averages) — Normal: $normalRange';
-  }
 
   @override
   Widget build(BuildContext context) {
     AppColors.watch(context);
-    return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-        children: [
-          ScreenHeader(
-            kicker: 'Monitoring data',
-            title: 'Vital Signs History',
-            trailing: SegmentedButton<VitalsRange>(
-              segments: const [
-                ButtonSegment(value: VitalsRange.daily, label: Text('Daily')),
-                ButtonSegment(value: VitalsRange.weekly, label: Text('Weekly')),
-              ],
-              selected: {_range},
-              showSelectedIcon: false,
-              onSelectionChanged: (s) => setState(() => _range = s.first),
-              style: SegmentedButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                selectedBackgroundColor: AppColors.surface,
-                selectedForegroundColor: AppColors.textPrimary,
-                foregroundColor: AppColors.textMuted,
-                backgroundColor: AppColors.segmentBg,
-                side: BorderSide.none,
+    final ble = BleService.instance;
+    return AnimatedBuilder(
+      animation: ble,
+      builder: (context, _) => SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          children: [
+            const ScreenHeader(
+              kicker: 'Monitoring data',
+              title: 'Live Sensor Readings',
+            ),
+            const SizedBox(height: 18),
+            _ReadingCard(
+              title: 'Heart Rate',
+              value: ble.heartRate == null
+                  ? 'Unavailable'
+                  : '${ble.heartRate} BPM',
+              receivedAt: ble.heartRateReceivedAt,
+              connected: ble.isConnected,
+              icon: Icons.favorite,
+            ),
+            const SizedBox(height: 12),
+            _ReadingCard(
+              title: 'Acceleration',
+              value: ble.accelerationG == null
+                  ? 'Unavailable'
+                  : '${ble.accelerationG!.toStringAsFixed(2)} g',
+              receivedAt: ble.accelerationReceivedAt,
+              connected: ble.isConnected,
+              icon: Icons.speed,
+            ),
+            const SizedBox(height: 12),
+            SectionCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const CardLabel('Arduino state'),
+                  const SizedBox(height: 6),
+                  Text(
+                    switch (ble.wearableState) {
+                      WearableState.normal => 'Normal',
+                      WearableState.fallPending =>
+                        'Possible fall · waiting for Arduino outcome',
+                      WearableState.emergency => 'Emergency',
+                      null => 'Unavailable',
+                    },
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: switch (ble.wearableState) {
+                        WearableState.normal => AppColors.success,
+                        WearableState.fallPending => AppColors.warning,
+                        WearableState.emergency => AppColors.emergency,
+                        null => AppColors.textMuted,
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    ble.isConnected
+                        ? 'State is reported by the Arduino.'
+                        : 'Disconnected · state may be stale.',
+                    style: TextStyle(color: AppColors.textFaint, fontSize: 13),
+                  ),
+                ],
               ),
             ),
-          ),
-          const SizedBox(height: 18),
-          VitalChartCard(
-            label: 'Heart Rate',
-            icon: Icons.favorite,
-            color: const Color(0xFFEF4444),
-            unit: 'BPM',
-            points: _daily ? MockData.dailyHeartRate : MockData.weeklyHeartRate,
-            minY: 50,
-            maxY: 90,
-            yInterval: 10,
-            normalLow: MockData.heartRateNormalLow,
-            normalHigh: MockData.heartRateNormalHigh,
-            minX: _daily ? 6 : 0,
-            maxX: _daily ? 20 : 6,
-            xInterval: _daily ? 4 : 1,
-            xLabel: _xLabel,
-            caption: _caption('60–100 BPM'),
-          ),
-          const SizedBox(height: 14),
-          VitalChartCard(
-            label: 'SpO₂ Saturation',
-            icon: Icons.water_drop,
-            color: const Color(0xFF3B82F6),
-            unit: '%',
-            points: _daily ? MockData.dailySpo2 : MockData.weeklySpo2,
-            minY: 90,
-            maxY: 100,
-            yInterval: 2,
-            normalLow: MockData.spo2NormalLow,
-            normalHigh: MockData.spo2NormalHigh,
-            minX: _daily ? 6 : 0,
-            maxX: _daily ? 20 : 6,
-            xInterval: _daily ? 4 : 1,
-            xLabel: _xLabel,
-            caption: _caption('95–100%'),
-          ),
-          const SizedBox(height: 18),
-          Text(
-            'This is monitoring data only. Consult a physician for medical advice.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.textFaint, fontSize: 13),
+            const SizedBox(height: 18),
+            Text(
+              'Only readings received from the connected Arduino are shown. Historical charts and SpO₂ are not provided by this device protocol.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.textFaint, fontSize: 13),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReadingCard extends StatelessWidget {
+  const _ReadingCard({
+    required this.title,
+    required this.value,
+    required this.receivedAt,
+    required this.connected,
+    required this.icon,
+  });
+
+  final String title;
+  final String value;
+  final DateTime? receivedAt;
+  final bool connected;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final stale =
+        receivedAt != null &&
+        (!connected ||
+            DateTime.now().difference(receivedAt!) >
+                const Duration(seconds: 30));
+    return SectionCard(
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.primary, size: 26),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CardLabel(title),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  receivedAt == null
+                      ? 'No reading received'
+                      : 'Received ${Formatters.date(receivedAt!)} at ${Formatters.clock(receivedAt!)}'
+                            '${stale ? ' · stale while disconnected' : ' · live connection'}',
+                  style: TextStyle(
+                    color: stale ? AppColors.warning : AppColors.textFaint,
+                    fontSize: 12.5,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
